@@ -48,12 +48,12 @@ export default function Sidebar() {
       <div className="flex items-center justify-between p-4 border-b border-border min-h-[60px]">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <img src="/brand-mark.svg" alt="AceStudy logo" className="w-8 h-8 rounded-xl object-cover shrink-0 shadow-sm ring-1 ring-primary/10" />
-            <span className="font-semibold text-sm tracking-tight">AceStudy</span>
+            <img src="/logo.png" alt="AceStudy logo" className="w-8 h-8 rounded-xl object-cover shrink-0 shadow-sm ring-1 ring-primary/10" />
+            <span className="brand-wordmark text-sm">AceStudy</span>
           </div>
         )}
         {collapsed && (
-          <img src="/brand-mark.svg" alt="AceStudy logo" className="w-8 h-8 rounded-xl object-cover mx-auto shrink-0 shadow-sm ring-1 ring-primary/10" />
+          <img src="/logo.png" alt="AceStudy logo" className="w-8 h-8 rounded-xl object-cover mx-auto shrink-0 shadow-sm ring-1 ring-primary/10" />
         )}
         {!collapsed && (
           <button onClick={() => dispatch(setSidebarCollapsed(true))} className="text-muted-foreground hover:text-foreground transition-colors">

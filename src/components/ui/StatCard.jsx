@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
-import Card from './Card'
+import { Card } from './card'
 
 export default function StatCard({ title, value, subtitle, icon: Icon, trend, color = 'text-primary', className, delay = 0 }) {
   return (

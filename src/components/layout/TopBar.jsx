@@ -32,7 +32,7 @@ export default function TopBar() {
   })
 
   return (
-    <header className="clay-card h-[60px] rounded-none border-b border-border/80 bg-card/60 backdrop-blur-md flex items-center justify-between px-6 shrink-0">
+    <header className="clay-card relative z-50 h-[60px] rounded-none border-b border-border/80 bg-card/60 backdrop-blur-md flex items-center justify-between px-6 shrink-0">
       <div className="flex items-center gap-3">
         {collapsed && (
           <button onClick={() => dispatch(setSidebarCollapsed(false))} className="text-muted-foreground hover:text-foreground transition-colors mr-1">
@@ -70,7 +70,7 @@ export default function TopBar() {
             )}
           </button>
           {showNotifications && (
-            <div className="absolute right-0 top-11 z-50 w-[min(360px,calc(100vw-24px))] rounded-lg border border-border bg-card shadow-xl">
+            <div className="fixed right-3 top-[68px] z-[100] w-[min(360px,calc(100vw-24px))] rounded-lg border border-foreground bg-card shadow-[8px_8px_0_hsl(var(--foreground))] sm:right-6">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <p className="text-sm font-semibold">Notifications</p>
                 {unreadCount > 0 && (

@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
         <TabsContent value="heatmap" className="mt-4">
           <Card>
             <CardHeader><CardTitle>Study Heatmap {new Date().getFullYear()}</CardTitle></CardHeader>
-            <CardContent><HeatmapChart /></CardContent>
+            <CardContent><HeatmapChart streak={stats?.streak} /></CardContent>
           </Card>
         </TabsContent>
       </Tabs>

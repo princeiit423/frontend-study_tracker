@@ -58,8 +58,8 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-[520px] clay-card rounded-none border-r border-border/80 flex-col justify-between p-12 bg-card/80">
         <div>
           <div className="flex items-center gap-3 mb-16">
-            <img src="/brand-mark.svg" alt="AceStudy logo" className="w-10 h-10 rounded-xl object-cover shadow-sm ring-1 ring-primary/10" />
-            <span className="font-semibold text-lg">AceStudy</span>
+            <img src="/logo.png" alt="AceStudy logo" className="w-10 h-10 rounded-xl object-cover shadow-sm ring-1 ring-primary/10" />
+            <span className="brand-wordmark text-lg">AceStudy</span>
           </div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <h1 className="text-4xl font-bold leading-tight mb-4">Your exam prep,<br /><span className="gradient-text">elevated.</span></h1>
@@ -80,8 +80,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-transparent">
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <img src="/brand-mark.svg" alt="AceStudy logo" className="w-10 h-10 rounded-xl object-cover shadow-sm ring-1 ring-primary/10" />
-            <span className="font-semibold text-lg">AceStudy</span>
+            <img src="/logo.png" alt="AceStudy logo" className="w-10 h-10 rounded-xl object-cover shadow-sm ring-1 ring-primary/10" />
+            <span className="brand-wordmark text-lg">AceStudy</span>
           </div>
           <h2 className="text-2xl font-bold mb-2">Welcome back</h2>
           <p className="text-muted-foreground mb-8">Sign in to continue your preparation journey.</p>

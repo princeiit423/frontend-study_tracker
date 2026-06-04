@@ -11,20 +11,27 @@ import { Badge } from '../components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/Select'
 import { formatHours } from '../lib/utils'
 
 const COLORS = ['#3b82f6','#8b5cf6','#22c55e','#f97316','#ec4899','#14b8a6','#eab308','#ef4444','#64748b','#06b6d4']
 const PRIORITIES = ['low','medium','high','critical']
 const PRIORITIES_COLOR = { low: 'secondary', medium: 'default', high: 'warning', critical: 'destructive' }
 
+function getSubjectExamId(subject) {
+  if (!subject?.exam) return ''
+  return typeof subject.exam === 'string' ? subject.exam : subject.exam._id || ''
+}
+
 function SubjectForm({ subject, onClose, onSave }) {
   const { data: exams } = useQuery({ queryKey: ['exams'], queryFn: () => examAPI.getAll(), select: d => d.data.data.exams })
   const [form, setForm] = useState(subject ? {
     name: subject.name, description: subject.description || '', color: subject.color || '#3b82f6',
-    goalHours: subject.goalHours || 0, priority: subject.priority || 'medium', exam: subject.exam?._id || '',
+    goalHours: subject.goalHours || 0, priority: subject.priority || 'medium', exam: getSubjectExamId(subject),
   } : { name: '', description: '', color: '#3b82f6', goalHours: 0, priority: 'medium', exam: '' })
   const [loading, setLoading] = useState(false)
+  const selectedExam = exams?.find(exam => exam._id === form.exam)
+  const selectedExamName = selectedExam?.name || (typeof subject?.exam === 'object' ? subject.exam.name : '')
 
   const handleSubmit = async () => {
     if (!form.name) return
@@ -41,7 +48,11 @@ function SubjectForm({ subject, onClose, onSave }) {
       <div>
         <Label>Exam (optional)</Label>
         <Select value={form.exam} onValueChange={v => setForm(p => ({...p, exam: v}))}>
-          <SelectTrigger className="mt-1"><SelectValue placeholder="Link to exam..." /></SelectTrigger>
+          <SelectTrigger className="mt-1">
+            <span className={form.exam ? 'truncate' : 'truncate text-muted-foreground'}>
+              {form.exam ? selectedExamName || 'Loading exam...' : 'Link to exam...'}
+            </span>
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="">No exam</SelectItem>
             {exams?.map(e => <SelectItem key={e._id} value={e._id}>{e.name}</SelectItem>)}

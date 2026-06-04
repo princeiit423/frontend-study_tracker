@@ -7,8 +7,65 @@ import { Play, Pause, Square, X, ChevronDown } from 'lucide-react'
 import { sessionAPI, subjectAPI } from '../lib/api'
 import { setActiveSession, clearActiveSession, incrementElapsed, setElapsedSeconds, setRunning, setPaused } from '../store/slices/sessionSlice'
 import { Button } from '../components/ui/button'
-import { formatDuration } from '../lib/utils'
 import { selectUser } from '../store/slices/authSlice'
+
+function getTimeParts(totalSeconds) {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0))
+  const hours = Math.floor(safeSeconds / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+  const seconds = safeSeconds % 60
+
+  return {
+    hours: String(hours).padStart(2, '0'),
+    minutes: String(minutes).padStart(2, '0'),
+    seconds: String(seconds).padStart(2, '0'),
+  }
+}
+
+function FlipUnit({ value, label, active }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
+      <div className="relative grid h-20 w-full max-w-[96px] place-items-center overflow-hidden rounded-2xl border border-white/15 bg-slate-950/80 shadow-[0_14px_30px_rgba(0,0,0,0.35)] sm:h-24 sm:max-w-[112px]">
+        <div className="absolute inset-x-0 top-0 h-1/2 bg-white/[0.07]" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-black/20" />
+        <div className="absolute inset-x-0 top-1/2 h-px bg-white/15" />
+        <div className="absolute left-2 top-1/2 h-2 w-1 -translate-y-1/2 rounded-full bg-black/60" />
+        <div className="absolute right-2 top-1/2 h-2 w-1 -translate-y-1/2 rounded-full bg-black/60" />
+        <AnimatePresence mode="popLayout">
+          <motion.span
+            key={value}
+            initial={{ rotateX: -88, y: -10, opacity: 0 }}
+            animate={{ rotateX: 0, y: 0, opacity: 1 }}
+            exit={{ rotateX: 88, y: 10, opacity: 0 }}
+            transition={{ duration: 0.32, ease: 'easeOut' }}
+            className="relative z-10 font-mono text-4xl font-black tabular-nums tracking-[0.08em] text-white drop-shadow sm:text-5xl"
+            style={{ transformOrigin: '50% 50%' }}
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
+        {active && <div className="absolute inset-0 rounded-2xl ring-1 ring-cyan-300/25" />}
+      </div>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50">{label}</span>
+    </div>
+  )
+}
+
+function FlipClock({ seconds, active }) {
+  const time = getTimeParts(seconds)
+
+  return (
+    <div className="w-full">
+      <div className="mx-auto flex w-full max-w-[420px] items-start justify-center gap-2 sm:gap-3">
+        <FlipUnit value={time.hours} label="Hours" active={active} />
+        <div className="pt-6 font-mono text-3xl font-black text-white/45 sm:pt-8 sm:text-4xl">:</div>
+        <FlipUnit value={time.minutes} label="Minutes" active={active} />
+        <div className="pt-6 font-mono text-3xl font-black text-white/45 sm:pt-8 sm:text-4xl">:</div>
+        <FlipUnit value={time.seconds} label="Seconds" active={active} />
+      </div>
+    </div>
+  )
+}
 
 export default function FocusPage() {
   const navigate = useNavigate()
@@ -105,6 +162,7 @@ export default function FocusPage() {
 
   const progress = pomodoroMode ? Math.min(100, (elapsedSeconds / pomodoroTarget) * 100) : 0
   const circumference = 2 * Math.PI * 90
+  const displaySeconds = pomodoroMode ? Math.max(0, pomodoroTarget - elapsedSeconds) : elapsedSeconds
   const moodConfig = {
     focus: { label: 'Focus', accent: 'from-violet-500/25 via-sky-500/15 to-cyan-400/20', pulse: 'shadow-violet-500/20', badge: 'text-violet-300', chip: 'bg-violet-500/10 border-violet-400/30 text-violet-100' },
     calm: { label: 'Calm', accent: 'from-emerald-400/25 via-lime-400/15 to-cyan-400/20', pulse: 'shadow-emerald-400/20', badge: 'text-emerald-200', chip: 'bg-emerald-500/10 border-emerald-400/30 text-emerald-100' },
@@ -134,7 +192,7 @@ export default function FocusPage() {
         <X size={20} />
       </button>
 
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 flex flex-col items-center gap-6 w-full max-w-md px-6">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-6 px-4 sm:px-6">
         <div className="w-full rounded-3xl border border-white/10 bg-white/8 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl">
           <div>
             <p className="text-[11px] uppercase tracking-[0.25em] text-white/60">Vibe</p>
@@ -196,7 +254,7 @@ export default function FocusPage() {
         )}
 
         {/* Timer circle */}
-        <div className="w-full rounded-3xl border border-white/10 bg-white/8 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl">
+        <div className="w-full rounded-3xl border border-white/10 bg-white/8 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
           <div className="relative flex items-center justify-center">
             {pomodoroMode && (
               <svg className="absolute" width="220" height="220" style={{ transform: 'rotate(-90deg)' }}>
@@ -210,10 +268,7 @@ export default function FocusPage() {
               <div className={`mb-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${moodConfig.chip}`}>
                 {pomodoroMode ? 'Pomodoro' : 'Deep Work'}
               </div>
-              <motion.p key={elapsedSeconds} className="font-mono text-5xl font-bold tracking-tight md:text-6xl"
-                style={{ color: isRunning && !isPaused ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}>
-                {pomodoroMode ? formatDuration(Math.max(0, pomodoroTarget - elapsedSeconds)) : formatDuration(elapsedSeconds)}
-              </motion.p>
+              <FlipClock seconds={displaySeconds} active={isRunning && !isPaused} />
               {activeSession?.subject && (
                 <p className="mt-2 text-sm text-muted-foreground">{activeSession.subject.name}</p>
               )}

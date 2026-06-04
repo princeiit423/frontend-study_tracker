@@ -7,8 +7,8 @@ export default function SplashScreen() {
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
           className="w-10 h-10 rounded-full border-2 border-primary/20 border-t-primary" />
         <div className="flex items-center gap-3 rounded-full border border-border bg-card/80 px-3 py-2 shadow-sm">
-          <img src="/brand-mark.svg" alt="AceStudy" className="w-8 h-8 rounded-xl object-cover" />
-          <span className="text-sm font-semibold tracking-[0.25em] uppercase text-muted-foreground">AceStudy</span>
+          <img src="/logo.png" alt="AceStudy" className="w-8 h-8 rounded-xl object-cover" />
+          <span className="brand-wordmark text-sm text-foreground">AceStudy</span>
         </div>
       </motion.div>
     </div>

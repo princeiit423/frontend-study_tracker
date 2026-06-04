@@ -11,7 +11,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Switch } from '../components/ui/switch'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/Select'
 import { Separator } from '../components/ui/separator'
 import { useNavigate } from 'react-router-dom'
 

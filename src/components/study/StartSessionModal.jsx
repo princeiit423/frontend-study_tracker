@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui/select'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui/Select'
 import { sessionAPI, subjectAPI, topicAPI } from '../../lib/api'
 import { setActiveSession, setRunning, setElapsedSeconds } from '../../store/slices/sessionSlice'
 

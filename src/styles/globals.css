@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -110,6 +110,11 @@
   .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.12); }
   .neo-title { font-size: clamp(1.35rem, 4vw, 1.8rem); line-height: 1.02; }
   .neo-subtitle { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.18em; opacity: 0.8; }
+  .brand-wordmark {
+    font-family: 'Sora', 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+  }
   .glass-light { background: rgba(255,255,255,0.72); backdrop-filter: blur(14px); border: 1px solid rgba(15,23,42,0.06); }
   .gradient-text {
     background: linear-gradient(135deg, #111827, #7c3aed, #22d3ee);

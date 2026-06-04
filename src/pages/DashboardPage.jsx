@@ -176,7 +176,7 @@ export default function DashboardPage() {
             <CardTitle>Study Heatmap</CardTitle>
           </CardHeader>
           <CardContent>
-            <HeatmapChart />
+            <HeatmapChart streak={stats?.streak} />
           </CardContent>
         </Card>
       </motion.div>

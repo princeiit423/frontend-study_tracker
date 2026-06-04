@@ -11,7 +11,7 @@ import { Progress } from '../components/ui/progress'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/Select'
 
 const PRIORITY_COLORS = { low: 'secondary', medium: 'default', high: 'warning', critical: 'destructive' }
 const DIFFICULTY_COLORS = { easy: 'success', medium: 'default', hard: 'warning', expert: 'destructive' }

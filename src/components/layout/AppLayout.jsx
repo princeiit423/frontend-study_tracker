@@ -1,9 +1,7 @@
 import { Outlet } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
-import { selectUser } from '../../store/slices/authSlice'
 
 export default function AppLayout() {
   return (
@@ -22,6 +20,17 @@ export default function AppLayout() {
               className="p-6 max-w-7xl mx-auto"
             >
               <Outlet />
+              <footer className="mt-10 border-t border-border pt-5 text-center text-xs font-medium text-muted-foreground">
+                Built by{' '}
+                <a
+                  href="https://faizhussain.netlify.app/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Faiz Hussain
+                </a>
+              </footer>
             </motion.div>
           </AnimatePresence>
         </main>

@@ -10,7 +10,7 @@ import { Badge } from '../components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/Select'
 import { formatDate } from '../lib/utils'
 
 const TYPES = ['daily','weekly','monthly','yearly','custom']
