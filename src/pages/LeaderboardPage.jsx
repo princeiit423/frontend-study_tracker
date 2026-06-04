@@ -9,6 +9,7 @@ import { Badge } from '../components/ui/badge'
 import { formatHours } from '../lib/utils'
 import { useSelector } from 'react-redux'
 import { selectUser } from '../store/slices/authSlice'
+import { getAvatarSrc } from '../lib/avatar'
 
 const MEDAL_COLORS = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
 
@@ -62,7 +63,7 @@ export default function LeaderboardPage() {
                       <span className="text-sm font-semibold text-muted-foreground">#{entry.rank}</span>
                     )}
                   </div>
-                  <img src={entry.avatar || `https://ui-avatars.com/api/?name=${entry.name}&background=3b82f6&color=fff`}
+                  <img src={getAvatarSrc(entry)}
                     alt={entry.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm truncate ${isMe ? 'text-primary' : ''}`}>{entry.name}{isMe && ' (You)'}</p>

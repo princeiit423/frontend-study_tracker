@@ -4,7 +4,7 @@ export function Card({ className, children, ...props }) {
   return (
     <div
       className={cn(
-        'neo-panel rounded-2xl border border-foreground/90 bg-card text-card-foreground shadow-[6px_6px_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 hover:translate-x-0.5 hover:shadow-[3px_3px_0_hsl(var(--foreground))]',
+        'neo-panel rounded-2xl text-card-foreground transition duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_22px_60px_rgba(0,0,0,0.28),0_0_34px_hsl(var(--primary)/0.08)]',
         className,
       )}
       {...props}

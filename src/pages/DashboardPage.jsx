@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Clock, Target, Flame, TrendingUp, Play, Calendar, Award, BookOpen, ChevronRight, Zap } from 'lucide-react'
-import { analyticsAPI, examAPI, goalAPI, sessionAPI } from '../lib/api'
+import { analyticsAPI, examAPI, goalAPI, sessionAPI, topicAPI } from '../lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Progress } from '../components/ui/progress'
 import { Button } from '../components/ui/button'
@@ -23,9 +23,14 @@ export default function DashboardPage() {
   const { data: exams } = useQuery({ queryKey: ['exams'], queryFn: () => examAPI.getAll(), select: d => d.data.data.exams })
   const { data: goals } = useQuery({ queryKey: ['goals', { active: true }], queryFn: () => goalAPI.getAll({ active: true }), select: d => d.data.data.goals })
   const { data: activeSession } = useQuery({ queryKey: ['active-session'], queryFn: () => sessionAPI.getActive(), select: d => d.data.data.session, refetchInterval: 5000 })
+  const { data: topics = [] } = useQuery({ queryKey: ['topics-all'], queryFn: () => topicAPI.getAll({ all: true }), select: d => d.data.data.topics })
 
   const primaryExam = exams?.find(e => e.isPrimary) || exams?.[0]
   const activeGoals = goals?.filter(g => !g.isCompleted)?.slice(0, 3) || []
+  const syllabusProgress = topics.length ? Math.round((topics.filter(t => t.isCompleted).length / topics.length) * 100) : 0
+  const daysLeft = primaryExam ? getDaysUntil(primaryExam.examDate) : 0
+  const remainingTopics = topics.filter(t => !t.isCompleted).length
+  const requiredPace = daysLeft > 0 ? Math.max(1, Math.ceil(remainingTopics / daysLeft)) : remainingTopics
 
   return (
     <div className="space-y-6">
@@ -87,8 +92,16 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">{formatDate(primaryExam.examDate)}</p>
                   </div>
                   <div className="text-center py-4">
-                    <p className="text-4xl font-bold text-primary">{getDaysUntil(primaryExam.examDate)}</p>
+                    <p className="text-4xl font-bold text-primary">{daysLeft}</p>
                     <p className="text-xs text-muted-foreground mt-1">days remaining</p>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className="text-muted-foreground">Syllabus</span>
+                      <span className="font-medium text-primary">{syllabusProgress}%</span>
+                    </div>
+                    <Progress value={syllabusProgress} />
+                    <p className="mt-2 text-xs text-muted-foreground">{requiredPace} topic/day pace needed</p>
                   </div>
                   {primaryExam.readinessScore > 0 && (
                     <div>

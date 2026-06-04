@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
+import { Textarea } from '../ui/textarea'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui/Select'
 import { sessionAPI, subjectAPI, topicAPI } from '../../lib/api'
 import { setActiveSession, setRunning, setElapsedSeconds } from '../../store/slices/sessionSlice'
@@ -18,7 +19,7 @@ const modes = [
 export default function StartSessionModal({ open, onClose }) {
   const dispatch = useDispatch()
   const qc = useQueryClient()
-  const [form, setForm] = useState({ subjectId: '', topicId: '', title: '', mode: 'standard' })
+  const [form, setForm] = useState({ subjectId: '', topicId: '', title: '', intent: '', mode: 'standard' })
   const [loading, setLoading] = useState(false)
 
   const { data: subjects } = useQuery({ queryKey: ['subjects'], queryFn: () => subjectAPI.getAll(), select: d => d.data.data.subjects, enabled: open })
@@ -27,7 +28,8 @@ export default function StartSessionModal({ open, onClose }) {
   const handleStart = async () => {
     setLoading(true)
     try {
-      const { data } = await sessionAPI.start({ subjectId: form.subjectId || undefined, topicId: form.topicId || undefined, title: form.title, mode: form.mode })
+      const title = form.title.trim() || form.intent.trim()
+      const { data } = await sessionAPI.start({ subjectId: form.subjectId || undefined, topicId: form.topicId || undefined, title, mode: form.mode })
       dispatch(setActiveSession(data.data.session))
       dispatch(setRunning(true))
       dispatch(setElapsedSeconds(0))
@@ -66,6 +68,15 @@ export default function StartSessionModal({ open, onClose }) {
           <div>
             <Label>Session Title (optional)</Label>
             <Input className="mt-1" placeholder="e.g. Chapter 5 revision..." value={form.title} onChange={e => setForm(p => ({...p, title: e.target.value}))} />
+          </div>
+          <div>
+            <Label>Focus Intent</Label>
+            <Textarea
+              className="mt-1 min-h-[86px] resize-none"
+              placeholder="What exactly will you finish before this session ends?"
+              value={form.intent}
+              onChange={e => setForm(p => ({...p, intent: e.target.value}))}
+            />
           </div>
           <div>
             <Label>Mode</Label>

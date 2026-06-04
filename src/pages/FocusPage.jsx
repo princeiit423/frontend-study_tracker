@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Pause, Square, X, ChevronDown } from 'lucide-react'
+import { Play, Pause, Square, X, ChevronDown, EyeOff, ShieldCheck } from 'lucide-react'
 import { sessionAPI, subjectAPI } from '../lib/api'
 import { setActiveSession, clearActiveSession, incrementElapsed, setElapsedSeconds, setRunning, setPaused } from '../store/slices/sessionSlice'
 import { Button } from '../components/ui/button'
 import { selectUser } from '../store/slices/authSlice'
+import StopSessionModal from '../components/study/StopSessionModal'
 
 function getTimeParts(totalSeconds) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0))
@@ -84,6 +85,9 @@ export default function FocusPage() {
   const [pomodoroPhase, setPomodoroPhase] = useState('work') // work | break
   const [pomodoroCount, setPomodoroCount] = useState(0)
   const [mood, setMood] = useState('focus')
+  const [intent, setIntent] = useState('')
+  const [minimalMode, setMinimalMode] = useState(false)
+  const [showStop, setShowStop] = useState(false)
 
   const workMins = user?.preferences?.pomodoroWork || 25
   const breakMins = user?.preferences?.pomodoroBreak || 5
@@ -118,7 +122,7 @@ export default function FocusPage() {
 
   const handleStart = async () => {
     try {
-      const { data } = await sessionAPI.start({ subjectId: selectedSubject?._id, mode: pomodoroMode ? 'pomodoro' : 'deep_work' })
+      const { data } = await sessionAPI.start({ subjectId: selectedSubject?._id, title: intent.trim(), mode: pomodoroMode ? 'pomodoro' : 'deep_work' })
       const session = data.data.session
       dispatch(setActiveSession(session))
       dispatch(setPaused(false))
@@ -148,16 +152,9 @@ export default function FocusPage() {
     } catch (e) { console.error(e) }
   }
 
-  const handleStop = async () => {
+  const handleStop = () => {
     if (!currentSession?._id) return
-    try {
-      await sessionAPI.stop(currentSession._id, { pomodoroCount })
-      dispatch(clearActiveSession())
-      await qc.invalidateQueries(['active-session'])
-      await qc.invalidateQueries(['dashboard-stats'])
-      await qc.invalidateQueries(['sessions'])
-      navigate('/dashboard')
-    } catch (e) { console.error(e) }
+    setShowStop(true)
   }
 
   const progress = pomodoroMode ? Math.min(100, (elapsedSeconds / pomodoroTarget) * 100) : 0
@@ -184,16 +181,19 @@ export default function FocusPage() {
           />
         ))}
         <div className={`absolute -top-12 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-gradient-to-br ${moodConfig.accent} blur-3xl opacity-70`} />
-        <div className="absolute bottom-10 left-10 h-32 w-32 rounded-full bg-cyan-400/10 blur-3xl" />
-        <div className="absolute right-8 top-16 h-28 w-28 rounded-full bg-violet-500/15 blur-3xl" />
+        {!minimalMode && <div className="absolute bottom-10 left-10 h-32 w-32 rounded-full bg-cyan-400/10 blur-3xl" />}
+        {!minimalMode && <div className="absolute right-8 top-16 h-28 w-28 rounded-full bg-violet-500/15 blur-3xl" />}
       </div>
       {/* Exit button */}
       <button onClick={() => navigate(-1)} className="absolute top-6 right-6 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-muted-foreground hover:bg-white/10 hover:text-foreground transition-colors backdrop-blur-md">
         <X size={20} />
       </button>
+      <button onClick={() => setMinimalMode(value => !value)} className="absolute left-6 top-6 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white backdrop-blur-md" title="Minimal mode">
+        <EyeOff size={20} />
+      </button>
 
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-6 px-4 sm:px-6">
-        <div className="w-full rounded-3xl border border-white/10 bg-white/8 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl">
+        {!minimalMode && <div className="w-full rounded-3xl border border-white/10 bg-white/8 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl">
           <div>
             <p className="text-[11px] uppercase tracking-[0.25em] text-white/60">Vibe</p>
             <p className="text-sm font-semibold text-white">Choose the atmosphere for your flow</p>
@@ -206,11 +206,11 @@ export default function FocusPage() {
               </button>
             ))}
           </div>
-        </div>
+        </div>}
 
         {/* Mode toggle */}
         {!activeSession && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             <Button variant={!pomodoroMode ? 'default' : 'outline'} size="sm" onClick={() => setPomodoroMode(false)}>Deep Work</Button>
             <Button variant={pomodoroMode ? 'default' : 'outline'} size="sm" onClick={() => setPomodoroMode(true)}>Pomodoro</Button>
           </div>
@@ -225,9 +225,16 @@ export default function FocusPage() {
 
         {/* Subject */}
         {!activeSession && (
-          <div className="relative">
+          <div className="relative z-40 grid w-full gap-3 rounded-3xl border border-white/10 bg-white/8 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:grid-cols-[1fr_auto]">
+            <input
+              value={intent}
+              onChange={event => setIntent(event.target.value)}
+              placeholder="Focus intent: what exactly will you finish?"
+              className="min-h-11 rounded-2xl border border-white/10 bg-black/20 px-4 text-sm font-semibold text-white outline-none placeholder:text-white/45 focus:border-white/30"
+            />
+            <div className="relative z-50">
             <button onClick={() => setShowSubjectPicker(!showSubjectPicker)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-border hover:border-primary/50 transition-colors text-sm">
+              className="flex min-h-11 items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-2 text-sm text-white transition-colors hover:border-white/30">
               {selectedSubject ? (
                 <>
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedSubject.color }} />
@@ -239,7 +246,7 @@ export default function FocusPage() {
             <AnimatePresence>
               {showSubjectPicker && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                  className="absolute top-full mt-2 left-0 right-0 bg-card border border-border rounded-xl overflow-hidden z-10 shadow-xl">
+                  className="absolute left-0 right-0 top-full z-[120] mt-2 max-h-64 min-w-[220px] overflow-y-auto rounded-xl border border-border bg-card/95 shadow-[0_20px_60px_rgba(0,0,0,0.42)] backdrop-blur-xl sm:left-auto sm:w-full">
                   <button className="w-full px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent text-left" onClick={() => { setSelectedSubject(null); setShowSubjectPicker(false) }}>None</button>
                   {subjects?.map(s => (
                     <button key={s._id} className="w-full px-4 py-2.5 text-sm hover:bg-accent flex items-center gap-2 text-left" onClick={() => { setSelectedSubject(s); setShowSubjectPicker(false) }}>
@@ -250,6 +257,7 @@ export default function FocusPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
           </div>
         )}
 
@@ -272,12 +280,25 @@ export default function FocusPage() {
               {activeSession?.subject && (
                 <p className="mt-2 text-sm text-muted-foreground">{activeSession.subject.name}</p>
               )}
+              {currentSession?.title && (
+                <p className="mx-auto mt-3 max-w-sm rounded-2xl border border-white/10 bg-black/20 px-4 py-2 text-sm font-semibold text-white/85">{currentSession.title}</p>
+              )}
               {pomodoroMode && <p className="mt-1 text-xs text-muted-foreground">{pomodoroPhase === 'work' ? 'Focus block' : 'Break time'}</p>}
               {isRunning && !isPaused && <p className="mt-1 text-xs text-emerald-300">Focused</p>}
               {isPaused && <p className="mt-1 text-xs text-amber-300">Paused</p>}
             </div>
           </div>
         </div>
+
+        {pomodoroMode && activeSession && pomodoroPhase === 'break' && !minimalMode && (
+          <div className="flex w-full items-start gap-3 rounded-3xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-emerald-50 shadow-xl shadow-black/10 backdrop-blur-xl">
+            <ShieldCheck size={18} className="mt-0.5 shrink-0 text-emerald-200" />
+            <div>
+              <p className="text-sm font-black">Break discipline</p>
+              <p className="text-xs text-emerald-100/75">Stand up, breathe, drink water. Keep phone and scrolling away until the next work block.</p>
+            </div>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="flex items-center gap-4">
@@ -302,6 +323,13 @@ export default function FocusPage() {
           "Success is the sum of small efforts, repeated day in and day out."
         </p>
       </motion.div>
+      <StopSessionModal
+        open={showStop}
+        onClose={() => setShowStop(false)}
+        session={currentSession}
+        elapsed={elapsedSeconds}
+        extraData={{ pomodoroCount }}
+      />
     </div>
   )
 }

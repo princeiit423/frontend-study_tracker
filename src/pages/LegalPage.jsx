@@ -8,7 +8,7 @@ const privacySections = [
   {
     title: 'Information we collect',
     body: [
-      'When you sign in with Clerk, AceStudy receives basic profile information such as your name, email address, and profile image so we can create and secure your account.',
+      'When you create an account, AceStudy stores your name, email address, and encrypted password so we can create and secure your account.',
       'We also store study-related information you choose to add, including subjects, topics, study sessions, goals, notes, mock test results, exam preferences, achievements, and app settings.',
     ],
   },
@@ -22,8 +22,8 @@ const privacySections = [
   {
     title: 'Authentication data',
     body: [
-      'AceStudy uses Clerk to sign you in and identify your account. We request the minimum profile information needed for login.',
-      'AceStudy does not use authentication profile data for advertising, does not transfer it to third parties except as needed to operate the service, and does not allow humans to read it unless required for security, legal compliance, or support you request.',
+      'AceStudy uses email and password authentication to sign you in and identify your account. Passwords are stored as cryptographic hashes, not as plain text.',
+      'AceStudy does not use authentication data for advertising, does not transfer it to third parties except as needed to operate the service, and does not allow humans to read it unless required for security, legal compliance, or support you request.',
     ],
   },
   {
@@ -65,7 +65,7 @@ const termsSections = [
   {
     title: 'Accounts and sign-in',
     body: [
-      'You may sign in using Clerk-supported authentication methods. By signing in, you authorize AceStudy to use basic profile information to create and manage your account.',
+      'You may sign in using the email and password account you create with AceStudy. You are responsible for keeping your password secure.',
       'We may suspend or terminate accounts that violate these terms, abuse the service, or create security risks.',
     ],
   },

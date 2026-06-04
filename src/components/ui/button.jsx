@@ -3,15 +3,15 @@ import { Slot } from '@radix-ui/react-slot'
 import { cva } from 'class-variance-authority'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-bold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground border border-foreground shadow-[4px_4px_0_hsl(var(--foreground))] hover:-translate-y-0.5 hover:translate-x-0.5 hover:shadow-[2px_2px_0_hsl(var(--foreground))]',
-        destructive: 'bg-destructive text-destructive-foreground border border-foreground shadow-[4px_4px_0_hsl(var(--foreground))] hover:-translate-y-0.5 hover:translate-x-0.5 hover:shadow-[2px_2px_0_hsl(var(--foreground))]',
-        outline: 'border border-foreground bg-transparent shadow-[4px_4px_0_hsl(var(--foreground))] hover:-translate-y-0.5 hover:translate-x-0.5 hover:shadow-[2px_2px_0_hsl(var(--foreground))]',
-        secondary: 'bg-secondary text-secondary-foreground border border-foreground shadow-[4px_4px_0_hsl(var(--foreground))] hover:-translate-y-0.5 hover:translate-x-0.5 hover:shadow-[2px_2px_0_hsl(var(--foreground))]',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        default: 'border border-primary/45 bg-primary text-primary-foreground shadow-[0_12px_30px_hsl(var(--primary)/0.22)] hover:-translate-y-0.5 hover:shadow-[0_16px_38px_hsl(var(--primary)/0.30)]',
+        destructive: 'border border-destructive/55 bg-destructive text-destructive-foreground shadow-[0_12px_30px_hsl(var(--destructive)/0.20)] hover:-translate-y-0.5 hover:shadow-[0_16px_38px_hsl(var(--destructive)/0.28)]',
+        outline: 'border border-border bg-card/70 text-foreground shadow-[0_10px_26px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 hover:border-primary/45 hover:bg-accent/70',
+        secondary: 'border border-border bg-secondary/90 text-secondary-foreground shadow-[0_10px_26px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 hover:border-primary/35',
+        ghost: 'text-muted-foreground hover:bg-accent/80 hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

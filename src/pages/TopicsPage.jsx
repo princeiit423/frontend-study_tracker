@@ -123,8 +123,12 @@ export default function TopicsPage() {
                 <div className="flex-1 min-w-0">
                   <p className={`font-medium text-sm ${t.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{t.name}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={PRIORITY_COLORS[t.priority]} className="text-[10px] h-4">{t.priority}</Badge>
-                    <Badge variant={DIFFICULTY_COLORS[t.difficulty]} className="text-[10px] h-4">{t.difficulty}</Badge>
+                    <select value={t.priority} onChange={e => updateMutation.mutate({ id: t._id, priority: e.target.value })} className="h-6 rounded border border-border bg-background px-1 text-[10px] capitalize">
+                      {['low','medium','high','critical'].map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <select value={t.difficulty} onChange={e => updateMutation.mutate({ id: t._id, difficulty: e.target.value })} className="h-6 rounded border border-border bg-background px-1 text-[10px] capitalize">
+                      {['easy','medium','hard','expert'].map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
                     {t.estimatedHours > 0 && <span className="text-[10px] text-muted-foreground">{t.estimatedHours}h est.</span>}
                     {t.actualHours > 0 && <span className="text-[10px] text-muted-foreground">{t.actualHours.toFixed(1)}h actual</span>}
                   </div>

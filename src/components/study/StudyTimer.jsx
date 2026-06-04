@@ -7,6 +7,7 @@ import { sessionAPI } from '../../lib/api'
 import { setActiveSession, clearActiveSession, incrementElapsed, setElapsedSeconds, setRunning, setPaused } from '../../store/slices/sessionSlice'
 import { Button } from '../ui/button'
 import { formatDuration } from '../../lib/utils'
+import { selectUser } from '../../store/slices/authSlice'
 import StartSessionModal from './StartSessionModal'
 import StopSessionModal from './StopSessionModal'
 
@@ -14,9 +15,11 @@ export default function StudyTimer({ activeSession: externalSession }) {
   const dispatch = useDispatch()
   const qc = useQueryClient()
   const { activeSession, elapsedSeconds, isRunning, isPaused } = useSelector(s => s.session)
+  const user = useSelector(selectUser)
   const [showStart, setShowStart] = useState(false)
   const [showStop, setShowStop] = useState(false)
   const timerRef = useRef(null)
+  const lastAlertRef = useRef(0)
 
   // Sync external session
   useEffect(() => {
@@ -40,6 +43,33 @@ export default function StudyTimer({ activeSession: externalSession }) {
     }
     return () => clearInterval(timerRef.current)
   }, [isRunning, isPaused])
+
+  useEffect(() => {
+    const workSeconds = (user?.preferences?.pomodoroWork || 25) * 60
+    if (!activeSession || !isRunning || isPaused || elapsedSeconds < workSeconds) return
+    if (elapsedSeconds % workSeconds !== 0 || lastAlertRef.current === elapsedSeconds) return
+    lastAlertRef.current = elapsedSeconds
+
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext
+      const ctx = new AudioContext()
+      const oscillator = ctx.createOscillator()
+      const gain = ctx.createGain()
+      oscillator.type = 'sine'
+      oscillator.frequency.value = 880
+      gain.gain.value = 0.08
+      oscillator.connect(gain)
+      gain.connect(ctx.destination)
+      oscillator.start()
+      oscillator.stop(ctx.currentTime + 0.25)
+    } catch {}
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Pomodoro complete', { body: 'Time for a short break.' })
+    } else if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [activeSession, elapsedSeconds, isPaused, isRunning, user?.preferences?.pomodoroWork])
 
   const handlePause = async () => {
     try {

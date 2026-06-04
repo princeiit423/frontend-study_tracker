@@ -154,6 +154,36 @@ export default function ExamsPage() {
                           <span className="text-xs font-medium">Readiness Score</span>
                           <span className="text-lg font-bold text-primary">{r.readinessScore}%</span>
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            ['Syllabus', r.componentScores?.syllabus],
+                            ['Consistency', r.componentScores?.consistency],
+                            ['Mocks', r.componentScores?.mocks],
+                            ['Revision', r.componentScores?.revision],
+                          ].map(([label, value]) => (
+                            <div key={label} className="rounded-md bg-background/70 px-2 py-1.5">
+                              <div className="flex justify-between text-[10px] text-muted-foreground">
+                                <span>{label}</span>
+                                <span>{value || 0}%</span>
+                              </div>
+                              <Progress value={value || 0} className="mt-1 h-1.5" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="rounded-md bg-background/70 px-2 py-1.5">
+                            <p className="text-sm font-bold">{r.requiredDailyHours || 0}h</p>
+                            <p className="text-[10px] text-muted-foreground">daily pace</p>
+                          </div>
+                          <div className="rounded-md bg-background/70 px-2 py-1.5">
+                            <p className="text-sm font-bold">{r.unresolvedMistakes || 0}</p>
+                            <p className="text-[10px] text-muted-foreground">mistakes</p>
+                          </div>
+                          <div className="rounded-md bg-background/70 px-2 py-1.5">
+                            <p className="text-sm font-bold">{r.hoursNeeded || 0}h</p>
+                            <p className="text-[10px] text-muted-foreground">needed</p>
+                          </div>
+                        </div>
                         {r.strongAreas?.length > 0 && <p className="text-xs text-muted-foreground"><span className="text-emerald-500 font-medium">Strong:</span> {r.strongAreas.join(', ')}</p>}
                         {r.weakAreas?.length > 0 && <p className="text-xs text-muted-foreground"><span className="text-red-500 font-medium">Weak:</span> {r.weakAreas.join(', ')}</p>}
                         <p className="text-xs text-muted-foreground">{r.recommendation}</p>

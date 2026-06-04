@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { useClerk } from '@clerk/clerk-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useMutation } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { User, Palette, Bell, Shield, Download, LogOut, Moon, Sun, Monitor } from 'lucide-react'
+import { User, Palette, Bell, Shield, Download, LogOut, Moon, Sun, Monitor, KeyRound } from 'lucide-react'
 import { userAPI, authAPI } from '../lib/api'
 import { updateUser, logout, selectUser } from '../store/slices/authSlice'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
@@ -15,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/Select'
 import { Separator } from '../components/ui/separator'
 import { useNavigate } from 'react-router-dom'
+import { AVATAR_PRESETS, getAvatarSrc, getPresetAvatarSrc } from '../lib/avatar'
 
 const THEME_MODES = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -35,10 +35,10 @@ export default function SettingsPage() {
   const user = useSelector(selectUser)
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { signOut } = useClerk()
   const [saving, setSaving] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '' })
   const [profileForm, setProfileForm] = useState({ name: user?.name || '', bio: user?.bio || '', timezone: user?.timezone || 'Asia/Kolkata' })
-  const [prefForm, setPrefForm] = useState({ dailyGoalHours: user?.preferences?.dailyGoalHours || 4, weeklyGoalHours: user?.preferences?.weeklyGoalHours || 28, pomodoroWork: user?.preferences?.pomodoroWork || 25, pomodoroBreak: user?.preferences?.pomodoroBreak || 5 })
+  const [prefForm, setPrefForm] = useState({ dailyGoalHours: user?.preferences?.dailyGoalHours || 4, weeklyGoalHours: user?.preferences?.weeklyGoalHours || 28, pomodoroWork: user?.preferences?.pomodoroWork || 25, pomodoroBreak: user?.preferences?.pomodoroBreak || 5, restDays: user?.preferences?.restDays || [] })
   const [notifForm, setNotifForm] = useState({ studyReminder: user?.notificationSettings?.studyReminder ?? true, goalReminder: user?.notificationSettings?.goalReminder ?? true, streakReminder: user?.notificationSettings?.streakReminder ?? true })
 
   const handleSaveProfile = async () => {
@@ -49,11 +49,30 @@ export default function SettingsPage() {
     } catch (e) { console.error(e) } finally { setSaving(false) }
   }
 
+  const handleAvatarSelect = async (avatar) => {
+    const { data } = await userAPI.updateProfile({ avatar })
+    dispatch(updateUser(data.data.user))
+  }
+
   const handleSavePrefs = async () => {
     setSaving(true)
     try {
       const { data } = await userAPI.updateProfile({ preferences: prefForm })
       dispatch(updateUser(data.data.user))
+    } catch (e) { console.error(e) } finally { setSaving(false) }
+  }
+
+  const toggleRestDay = (day) => {
+    setPrefForm(p => ({ ...p, restDays: p.restDays.includes(day) ? p.restDays.filter(d => d !== day) : [...p.restDays, day] }))
+  }
+
+  const handleChangePassword = async () => {
+    setSaving(true)
+    try {
+      await userAPI.changePassword(passwordForm)
+      setPasswordForm({ currentPassword: '', newPassword: '' })
+      dispatch(logout())
+      navigate('/login')
     } catch (e) { console.error(e) } finally { setSaving(false) }
   }
 
@@ -84,17 +103,17 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     try { await authAPI.logout() } catch {}
-    await signOut()
     dispatch(logout())
     navigate('/login')
   }
 
   const handleExportData = () => {
-    const userData = { user, exportDate: new Date().toISOString() }
-    const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = 'acestudy-data.json'; a.click()
-    URL.revokeObjectURL(url)
+    userAPI.exportData().then(({ data }) => {
+      const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = 'acestudy-full-export.json'; a.click()
+      URL.revokeObjectURL(url)
+    })
   }
 
   return (
@@ -118,12 +137,27 @@ export default function SettingsPage() {
             <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4 pb-4 border-b border-border">
-                <img src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=3b82f6&color=fff`}
+                <img src={getAvatarSrc(user)}
                   alt={user?.name} className="w-16 h-16 rounded-full object-cover" />
                 <div>
                   <p className="font-semibold">{user?.name}</p>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
                   <p className="text-xs text-muted-foreground mt-1">Level {user?.level || 1} · {user?.xp || 0} XP</p>
+                </div>
+              </div>
+              <div>
+                <Label>Avatar</Label>
+                <div className="mt-2 grid grid-cols-6 gap-2">
+                  {AVATAR_PRESETS.map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handleAvatarSelect(preset)}
+                      className={`rounded-full border-2 p-0.5 ${user?.avatar === preset ? 'border-primary' : 'border-border'}`}
+                    >
+                      <img src={getPresetAvatarSrc(preset, user?.name)} alt={preset} className="h-9 w-9 rounded-full" />
+                    </button>
+                  ))}
                 </div>
               </div>
               <div>
@@ -154,6 +188,18 @@ export default function SettingsPage() {
               <div>
                 <div className="flex justify-between mb-2"><Label>Weekly Goal</Label><span className="text-sm font-medium text-primary">{prefForm.weeklyGoalHours}h</span></div>
                 <input type="range" min={7} max={100} value={prefForm.weeklyGoalHours} onChange={e => setPrefForm(p => ({...p, weeklyGoalHours: Number(e.target.value)}))} className="w-full accent-blue-500" />
+              </div>
+              <Separator />
+              <div>
+                <Label className="mb-2 block">Protected Rest Days</Label>
+                <div className="flex flex-wrap gap-2">
+                  {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(day => (
+                    <button key={day} type="button" onClick={() => toggleRestDay(day)}
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${prefForm.restDays.includes(day) ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'}`}>
+                      {day}
+                    </button>
+                  ))}
+                </div>
               </div>
               <Separator />
               <p className="text-sm font-medium">Pomodoro Settings</p>
@@ -238,6 +284,17 @@ export default function SettingsPage() {
                   <Download size={14} className="mr-2" /> Export
                 </Button>
               </div>
+              <div className="space-y-3 p-4 rounded-lg border border-border">
+                <div>
+                  <p className="text-sm font-medium">Change Password</p>
+                  <p className="text-xs text-muted-foreground">You will be asked to sign in again.</p>
+                </div>
+                <Input type="password" placeholder="Current password" value={passwordForm.currentPassword} onChange={e => setPasswordForm(p => ({...p, currentPassword: e.target.value}))} />
+                <Input type="password" placeholder="New password" value={passwordForm.newPassword} onChange={e => setPasswordForm(p => ({...p, newPassword: e.target.value}))} />
+                <Button size="sm" onClick={handleChangePassword} disabled={saving || passwordForm.newPassword.length < 8}>
+                  <KeyRound size={14} className="mr-2" /> Change Password
+                </Button>
+              </div>
               <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                 <div>
                   <p className="text-sm font-medium">Sign Out</p>
@@ -252,7 +309,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-medium text-destructive">Delete Account</p>
                   <p className="text-xs text-muted-foreground">Permanently delete your account and all data</p>
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => window.confirm('Are you sure? This cannot be undone.') && userAPI.deleteAccount().then(async () => { await signOut(); dispatch(logout()); navigate('/login') })}>
+                <Button variant="destructive" size="sm" onClick={() => window.confirm('Are you sure? This cannot be undone.') && userAPI.deleteAccount().then(() => { dispatch(logout()); navigate('/login') })}>
                   Delete
                 </Button>
               </div>

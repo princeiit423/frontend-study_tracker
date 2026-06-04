@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../../lib/utils'
 import { ChevronDown } from 'lucide-react'
 
@@ -57,7 +58,7 @@ export function SelectTrigger({ children, className, ...props }) {
       ref={triggerRef}
       type="button"
       onClick={() => setOpen?.(!open)}
-      className={cn('clay-input flex h-10 w-full items-center justify-between rounded-xl border border-foreground bg-card px-3 text-sm text-foreground shadow-[4px_4px_0_hsl(var(--foreground))] transition focus:outline-none focus:ring-2 focus:ring-ring', className)}
+      className={cn('clay-input flex h-10 w-full items-center justify-between rounded-xl px-3 text-sm text-foreground transition hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-ring/35', className)}
       {...props}
     >
       {children ?? <span className={cn('truncate', !value && 'text-muted-foreground')}>{value || 'Select an option'}</span>}
@@ -67,11 +68,43 @@ export function SelectTrigger({ children, className, ...props }) {
 }
 
 export function SelectContent({ children, className }) {
-  const { open, contentRef } = useContext(SelectContext) || {}
+  const { open, contentRef, triggerRef } = useContext(SelectContext) || {}
+  const [position, setPosition] = useState(null)
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef?.current) return
+
+    const updatePosition = () => {
+      const rect = triggerRef.current.getBoundingClientRect()
+      setPosition({
+        top: rect.bottom + 6,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: Math.max(180, window.innerHeight - rect.bottom - 16),
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, triggerRef])
 
   if (!open) return null
 
-  return <div ref={contentRef} className={cn('absolute z-20 mt-1 w-full rounded-xl border border-foreground bg-card p-1.5 shadow-[6px_6px_0_hsl(var(--foreground))]', className)}>{children}</div>
+  return createPortal(
+    <div
+      ref={contentRef}
+      style={position ? { top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight } : undefined}
+      className={cn('fixed z-[9999] overflow-y-auto rounded-xl border border-border bg-card/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.36),0_0_0_1px_hsl(var(--primary)/0.08)_inset] backdrop-blur-xl', className)}
+    >
+      {children}
+    </div>,
+    document.body
+  )
 }
 
 export function SelectItem({ value, children, className }) {
@@ -82,7 +115,7 @@ export function SelectItem({ value, children, className }) {
     <button
       type="button"
       onClick={() => onValueChange?.(value, label)}
-      className={cn('flex w-full items-center rounded-lg border border-transparent px-3 py-2 text-left text-sm text-foreground transition hover:border-foreground hover:bg-accent', selectedValue === value && 'border-foreground bg-accent', className)}
+      className={cn('flex w-full items-center rounded-lg border border-transparent px-3 py-2 text-left text-sm text-foreground transition hover:border-primary/35 hover:bg-accent/80', selectedValue === value && 'border-primary/45 bg-primary/10 text-primary', className)}
     >
       {children}
     </button>
@@ -100,7 +133,7 @@ export default function NativeSelect({ label, error, className, options = [], ..
     <div className="space-y-1.5">
       {label && <label className="text-sm font-medium">{label}</label>}
       <div className="relative">
-        <select className={cn('w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none', error && 'border-destructive', className)} {...props}>
+        <select className={cn('clay-input h-10 w-full rounded-xl px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring/35 appearance-none', error && 'border-destructive', className)} {...props}>
           {options.map(o => <option key={o.value || o} value={o.value || o}>{o.label || o}</option>)}
         </select>
         <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />

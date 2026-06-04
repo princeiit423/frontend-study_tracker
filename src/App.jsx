@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { authAPI, setAuthTokenGetter } from './lib/api'
-import { setCredentials, setLoading, logout, selectIsAuthenticated, selectIsLoading, selectUser } from './store/slices/authSlice'
+import { authAPI } from './lib/api'
+import { setCredentials, logout, selectIsAuthenticated, selectIsLoading, selectUser } from './store/slices/authSlice'
 
 // Pages
 import LoginPage from './pages/LoginPage'
@@ -22,6 +21,12 @@ import LeaderboardPage from './pages/LeaderboardPage'
 import SettingsPage from './pages/SettingsPage'
 import FocusPage from './pages/FocusPage'
 import LegalPage from './pages/LegalPage'
+import TasksPage from './pages/TasksPage'
+import CalendarPage from './pages/CalendarPage'
+import StudyPlanPage from './pages/StudyPlanPage'
+import RevisionPage from './pages/RevisionPage'
+import AdminPage from './pages/AdminPage'
+import StudyCoachPage from './pages/StudyCoachPage'
 
 import AppLayout from './components/layout/AppLayout'
 import SplashScreen from './components/auth/SplashScreen'
@@ -43,45 +48,37 @@ function OnboardingGuard({ children }) {
 }
 
 const ACCENT_MAP = {
-  blue: '221.2 83.2% 53.3%',
-  purple: '262.2 83.2% 58.3%',
-  green: '142 71% 45%',
-  orange: '25 95% 53%',
-  pink: '330 81% 60%',
-  cyan: '188 94% 42%',
+  blue: '199 89% 62%',
+  purple: '270 91% 72%',
+  green: '152 76% 55%',
+  orange: '35 94% 58%',
+  pink: '326 86% 68%',
+  cyan: '176 84% 54%',
 }
 
 export default function App() {
   const dispatch = useDispatch()
   const isLoading = useSelector(selectIsLoading)
-  const { getToken, isLoaded, isSignedIn } = useAuth()
 
   useEffect(() => {
-    setAuthTokenGetter(isLoaded && isSignedIn ? getToken : null)
-  }, [getToken, isLoaded, isSignedIn])
-
-  useEffect(() => {
-    if (!isLoaded) {
-      dispatch(setLoading(true))
-      return
-    }
-
     const initAuth = async () => {
-      if (!isSignedIn) {
-        dispatch(logout())
-        return
-      }
-
       try {
-        const { data } = await authAPI.sync()
+        const { data } = await authAPI.getMe()
         dispatch(setCredentials({ user: data.data.user }))
       } catch {
-        dispatch(logout())
+        try {
+          const { data } = await authAPI.refresh()
+          dispatch(setCredentials({ accessToken: data.data.accessToken }))
+          const meRes = await authAPI.getMe()
+          dispatch(setCredentials({ user: meRes.data.data.user }))
+        } catch {
+          dispatch(logout())
+        }
       }
     }
 
     initAuth()
-  }, [dispatch, isLoaded, isSignedIn])
+  }, [dispatch])
 
   const user = useSelector(selectUser)
   useEffect(() => {
@@ -128,6 +125,7 @@ export default function App() {
         }>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="coach" element={<StudyCoachPage />} />
           <Route path="exams" element={<ExamsPage />} />
           <Route path="subjects" element={<SubjectsPage />} />
           <Route path="subjects/:id/topics" element={<TopicsPage />} />
@@ -138,6 +136,11 @@ export default function App() {
           <Route path="mock-tests" element={<MockTestsPage />} />
           <Route path="achievements" element={<AchievementsPage />} />
           <Route path="leaderboard" element={<LeaderboardPage />} />
+          <Route path="tasks" element={<TasksPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="study-plan" element={<StudyPlanPage />} />
+          <Route path="revisions" element={<RevisionPage />} />
+          <Route path="admin" element={<AdminPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
         <Route path="/focus" element={

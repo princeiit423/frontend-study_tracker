@@ -2,11 +2,13 @@ import { Outlet } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import CommandPalette from './CommandPalette'
 
 export default function AppLayout() {
   return (
-    <div className="flex h-screen overflow-hidden bg-transparent">
+    <div className="aurora-shell flex h-screen overflow-hidden bg-transparent">
       <Sidebar />
+      <CommandPalette />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto scrollbar-thin">
@@ -17,7 +19,7 @@ export default function AppLayout() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="p-6 max-w-7xl mx-auto"
+              className="mx-auto max-w-7xl p-4 sm:p-6"
             >
               <Outlet />
               <footer className="mt-10 border-t border-border pt-5 text-center text-xs font-medium text-muted-foreground">

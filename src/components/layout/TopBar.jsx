@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Menu, ChevronRight, Check } from 'lucide-react'
+import { Bell, Check, ChevronRight, Menu } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { selectUser } from '../../store/slices/authSlice'
 import { setSidebarCollapsed } from '../../store/slices/uiSlice'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { notificationAPI } from '../../lib/api'
 import { formatHours } from '../../lib/utils'
+import { getAvatarSrc } from '../../lib/avatar'
 
 export default function TopBar() {
   const user = useSelector(selectUser)
@@ -32,10 +33,10 @@ export default function TopBar() {
   })
 
   return (
-    <header className="clay-card relative z-50 h-[60px] rounded-none border-b border-border/80 bg-card/60 backdrop-blur-md flex items-center justify-between px-6 shrink-0">
+    <header className="relative z-50 flex h-[64px] shrink-0 items-center justify-between border-b border-border/70 bg-background/45 px-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-2xl sm:px-6">
       <div className="flex items-center gap-3">
         {collapsed && (
-          <button onClick={() => dispatch(setSidebarCollapsed(false))} className="text-muted-foreground hover:text-foreground transition-colors mr-1">
+          <button onClick={() => dispatch(setSidebarCollapsed(false))} className="mr-1 text-muted-foreground transition-colors hover:text-foreground">
             <Menu size={18} />
           </button>
         )}
@@ -43,34 +44,35 @@ export default function TopBar() {
           {user && (
             <span>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},{' '}
-              <span className="text-foreground font-medium">{user.name?.split(' ')[0]}</span>
+              <span className="font-black text-foreground">{user.name?.split(' ')[0]}</span>
             </span>
           )}
         </div>
       </div>
+
       <div className="flex items-center gap-2">
         {user && (
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/50 text-xs text-muted-foreground mr-2">
-            <span className="text-primary font-semibold">{user.currentStreak || 0}</span>
+          <div className="mr-2 hidden items-center gap-1.5 rounded-xl border border-border bg-card/55 px-3 py-1.5 text-xs text-muted-foreground shadow-[0_10px_28px_rgba(0,0,0,0.14)] backdrop-blur-xl sm:flex">
+            <span className="font-semibold text-primary">{user.currentStreak || 0}</span>
             <span>day streak</span>
-            <span className="mx-1 text-border">·</span>
-            <span className="text-primary font-semibold">{formatHours(user.totalStudyHours || 0)}</span>
+            <span className="mx-1 text-border">-</span>
+            <span className="font-semibold text-primary">{formatHours(user.totalStudyHours || 0)}</span>
             <span>total</span>
           </div>
         )}
+
         <div className="relative">
           <button
             onClick={() => setShowNotifications(v => !v)}
-            className="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent/70 hover:text-foreground"
             aria-label="Notifications"
           >
             <Bell size={17} />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
-            )}
+            {unreadCount > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary shadow-[0_0_16px_hsl(var(--primary))]" />}
           </button>
+
           {showNotifications && (
-            <div className="fixed right-3 top-[68px] z-[100] w-[min(360px,calc(100vw-24px))] rounded-lg border border-foreground bg-card shadow-[8px_8px_0_hsl(var(--foreground))] sm:right-6">
+            <div className="fixed right-3 top-[72px] z-[100] w-[min(360px,calc(100vw-24px))] rounded-xl border border-border bg-card/95 shadow-[0_20px_60px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:right-6">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <p className="text-sm font-semibold">Notifications</p>
                 {unreadCount > 0 && (
@@ -109,15 +111,12 @@ export default function TopBar() {
             </div>
           )}
         </div>
+
         <button
           onClick={() => navigate('/settings')}
-          className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-accent transition-colors"
+          className="flex items-center gap-2 rounded-xl border border-transparent py-1.5 pl-2 pr-3 transition-colors hover:border-border hover:bg-accent/70"
         >
-          <img
-            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'U'}&background=3b82f6&color=fff`}
-            alt={user?.name}
-            className="w-7 h-7 rounded-full object-cover"
-          />
+          <img src={getAvatarSrc(user)} alt={user?.name} className="h-7 w-7 rounded-full object-cover ring-1 ring-primary/25" />
           <ChevronRight size={14} className="text-muted-foreground" />
         </button>
       </div>
