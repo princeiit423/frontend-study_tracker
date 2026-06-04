@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
 import { BookOpen, Target, TrendingUp, Zap } from 'lucide-react'
@@ -95,7 +95,12 @@ export default function LoginPage() {
                 <div className="w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
               </div>
             ) : <div ref={googleRef} />}
-            <p className="text-xs text-muted-foreground text-center">By signing in, you agree to our Terms and Privacy Policy.</p>
+            <p className="text-xs text-muted-foreground text-center">
+              By signing in, you agree to our{' '}
+              <Link to="/terms-of-service" className="text-primary underline-offset-4 hover:underline">Terms of Service</Link>
+              {' '}and{' '}
+              <Link to="/privacy-policy" className="text-primary underline-offset-4 hover:underline">Privacy Policy</Link>.
+            </p>
           </div>
           <div className="mt-12 pt-8 border-t border-border">
             <p className="text-xs text-muted-foreground text-center">Trusted by students preparing for JEE, UPSC, GATE, CAT, and more.</p>

@@ -20,6 +20,7 @@ import AchievementsPage from './pages/AchievementsPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import SettingsPage from './pages/SettingsPage'
 import FocusPage from './pages/FocusPage'
+import LegalPage from './pages/LegalPage'
 
 import AppLayout from './components/layout/AppLayout'
 import SplashScreen from './components/auth/SplashScreen'
@@ -103,6 +104,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/privacy-policy" element={<LegalPage type="privacy" />} />
+        <Route path="/terms-of-service" element={<LegalPage type="terms" />} />
         <Route path="/onboarding" element={
           <ProtectedRoute><OnboardingPage /></ProtectedRoute>
         } />
