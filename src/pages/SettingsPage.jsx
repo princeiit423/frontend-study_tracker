@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useClerk } from '@clerk/clerk-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useMutation } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
@@ -34,6 +35,7 @@ export default function SettingsPage() {
   const user = useSelector(selectUser)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { signOut } = useClerk()
   const [saving, setSaving] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: user?.name || '', bio: user?.bio || '', timezone: user?.timezone || 'Asia/Kolkata' })
   const [prefForm, setPrefForm] = useState({ dailyGoalHours: user?.preferences?.dailyGoalHours || 4, weeklyGoalHours: user?.preferences?.weeklyGoalHours || 28, pomodoroWork: user?.preferences?.pomodoroWork || 25, pomodoroBreak: user?.preferences?.pomodoroBreak || 5 })
@@ -82,6 +84,7 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     try { await authAPI.logout() } catch {}
+    await signOut()
     dispatch(logout())
     navigate('/login')
   }
@@ -249,7 +252,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-medium text-destructive">Delete Account</p>
                   <p className="text-xs text-muted-foreground">Permanently delete your account and all data</p>
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => window.confirm('Are you sure? This cannot be undone.') && userAPI.deleteAccount().then(() => { dispatch(logout()); navigate('/login') })}>
+                <Button variant="destructive" size="sm" onClick={() => window.confirm('Are you sure? This cannot be undone.') && userAPI.deleteAccount().then(async () => { await signOut(); dispatch(logout()); navigate('/login') })}>
                   Delete
                 </Button>
               </div>

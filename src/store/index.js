@@ -9,6 +9,4 @@ export const store = configureStore({
     ui: uiReducer,
     session: sessionReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({ serializableCheck: { ignoredActions: ['auth/setCredentials'] } }),
 })

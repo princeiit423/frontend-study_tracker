@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useClerk } from '@clerk/clerk-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
 import {
@@ -30,10 +31,12 @@ export default function Sidebar() {
   const user = useSelector(selectUser)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { signOut } = useClerk()
   const collapsed = useSel(s => s.ui.sidebarCollapsed)
 
   const handleLogout = async () => {
     try { await authAPI.logout() } catch {}
+    await signOut()
     dispatch(logout())
     navigate('/login')
   }

@@ -104,6 +104,35 @@
     border: 3px solid hsl(var(--foreground));
     box-shadow: 4px 4px 0 hsl(var(--foreground));
   }
+  .login-clerk-card .cl-rootBox,
+  .login-clerk-card .cl-cardBox,
+  .login-clerk-card .cl-card,
+  .login-clerk-card .cl-main,
+  .login-clerk-card .cl-form,
+  .login-clerk-card .cl-footer,
+  .login-clerk-card .cl-socialButtons,
+  .login-clerk-card .cl-socialButtonsBlockButton,
+  .login-clerk-card .cl-formField,
+  .login-clerk-card .cl-formFieldInput {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .login-clerk-card .cl-card,
+  .login-clerk-card .cl-cardBox {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  .login-clerk-card .cl-internal-b3fm6y,
+  .login-clerk-card [class*="cl-internal"] {
+    max-width: 100%;
+  }
+  .login-clerk-card input,
+  .login-clerk-card button {
+    min-width: 0;
+  }
 }
 
 @layer utilities {

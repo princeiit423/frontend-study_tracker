@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
+import { useAuth } from '@clerk/clerk-react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { authAPI } from './lib/api'
+import { authAPI, setAuthTokenGetter } from './lib/api'
 import { setCredentials, setLoading, logout, selectIsAuthenticated, selectIsLoading, selectUser } from './store/slices/authSlice'
 
 // Pages
@@ -53,25 +54,34 @@ const ACCENT_MAP = {
 export default function App() {
   const dispatch = useDispatch()
   const isLoading = useSelector(selectIsLoading)
+  const { getToken, isLoaded, isSignedIn } = useAuth()
 
   useEffect(() => {
+    setAuthTokenGetter(isLoaded && isSignedIn ? getToken : null)
+  }, [getToken, isLoaded, isSignedIn])
+
+  useEffect(() => {
+    if (!isLoaded) {
+      dispatch(setLoading(true))
+      return
+    }
+
     const initAuth = async () => {
+      if (!isSignedIn) {
+        dispatch(logout())
+        return
+      }
+
       try {
-        const { data } = await authAPI.getMe()
+        const { data } = await authAPI.sync()
         dispatch(setCredentials({ user: data.data.user }))
       } catch {
-        try {
-          const { data } = await authAPI.refresh()
-          dispatch(setCredentials({ accessToken: data.data.accessToken }))
-          const meRes = await authAPI.getMe()
-          dispatch(setCredentials({ user: meRes.data.data.user }))
-        } catch {
-          dispatch(logout())
-        }
+        dispatch(logout())
       }
     }
+
     initAuth()
-  }, [dispatch])
+  }, [dispatch, isLoaded, isSignedIn])
 
   const user = useSelector(selectUser)
   useEffect(() => {

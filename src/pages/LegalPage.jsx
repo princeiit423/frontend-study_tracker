@@ -8,7 +8,7 @@ const privacySections = [
   {
     title: 'Information we collect',
     body: [
-      'When you sign in with Google, AceStudy receives basic profile information such as your name, email address, and profile image so we can create and secure your account.',
+      'When you sign in with Clerk, AceStudy receives basic profile information such as your name, email address, and profile image so we can create and secure your account.',
       'We also store study-related information you choose to add, including subjects, topics, study sessions, goals, notes, mock test results, exam preferences, achievements, and app settings.',
     ],
   },
@@ -20,10 +20,10 @@ const privacySections = [
     ],
   },
   {
-    title: 'Google user data',
+    title: 'Authentication data',
     body: [
-      'AceStudy uses Google OAuth only to sign you in and identify your account. We request the minimum Google profile information needed for login.',
-      'AceStudy does not use Google user data for advertising, does not transfer Google user data to third parties except as needed to operate the service, and does not allow humans to read Google user data unless required for security, legal compliance, or support you request.',
+      'AceStudy uses Clerk to sign you in and identify your account. We request the minimum profile information needed for login.',
+      'AceStudy does not use authentication profile data for advertising, does not transfer it to third parties except as needed to operate the service, and does not allow humans to read it unless required for security, legal compliance, or support you request.',
     ],
   },
   {
@@ -63,9 +63,9 @@ const termsSections = [
     ],
   },
   {
-    title: 'Accounts and Google sign-in',
+    title: 'Accounts and sign-in',
     body: [
-      'You may sign in using Google OAuth. By using Google sign-in, you authorize AceStudy to use the basic profile information provided by Google to create and manage your account.',
+      'You may sign in using Clerk-supported authentication methods. By signing in, you authorize AceStudy to use basic profile information to create and manage your account.',
       'We may suspend or terminate accounts that violate these terms, abuse the service, or create security risks.',
     ],
   },
