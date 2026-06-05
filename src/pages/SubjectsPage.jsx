@@ -11,7 +11,7 @@ import { Badge } from '../components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/Select'
+import FancySelect from '../components/ui/FancySelect'
 import { formatHours } from '../lib/utils'
 
 const COLORS = ['#3b82f6','#8b5cf6','#22c55e','#f97316','#ec4899','#14b8a6','#eab308','#ef4444','#64748b','#06b6d4']
@@ -25,14 +25,13 @@ function getSubjectExamId(subject) {
 
 function SubjectForm({ subject, onClose, onSave }) {
   const { data: exams } = useQuery({ queryKey: ['exams'], queryFn: () => examAPI.getAll(), select: d => d.data.data.exams })
+  const examOptions = [{ value: '', label: 'No exam' }, ...(exams || []).map(exam => ({ value: exam._id, label: exam.name, color: exam.color }))]
+  const priorityOptions = PRIORITIES.map(priority => ({ value: priority, label: priority[0].toUpperCase() + priority.slice(1) }))
   const [form, setForm] = useState(subject ? {
     name: subject.name, description: subject.description || '', color: subject.color || '#3b82f6',
     goalHours: subject.goalHours || 0, priority: subject.priority || 'medium', exam: getSubjectExamId(subject),
   } : { name: '', description: '', color: '#3b82f6', goalHours: 0, priority: 'medium', exam: '' })
   const [loading, setLoading] = useState(false)
-  const selectedExam = exams?.find(exam => exam._id === form.exam)
-  const selectedExamName = selectedExam?.name || (typeof subject?.exam === 'object' ? subject.exam.name : '')
-
   const handleSubmit = async () => {
     if (!form.name) return
     setLoading(true)
@@ -47,27 +46,23 @@ function SubjectForm({ subject, onClose, onSave }) {
       </div>
       <div>
         <Label>Exam (optional)</Label>
-        <Select value={form.exam} onValueChange={v => setForm(p => ({...p, exam: v}))}>
-          <SelectTrigger className="mt-1">
-            <span className={form.exam ? 'truncate' : 'truncate text-muted-foreground'}>
-              {form.exam ? selectedExamName || 'Loading exam...' : 'Link to exam...'}
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">No exam</SelectItem>
-            {exams?.map(e => <SelectItem key={e._id} value={e._id}>{e.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <FancySelect
+          className="mt-1"
+          value={form.exam}
+          onChange={exam => setForm(p => ({ ...p, exam }))}
+          options={examOptions}
+          placeholder="Link to exam..."
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label>Priority</Label>
-          <Select value={form.priority} onValueChange={v => setForm(p => ({...p, priority: v}))}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {PRIORITIES.map(p => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <FancySelect
+            className="mt-1"
+            value={form.priority}
+            onChange={priority => setForm(p => ({ ...p, priority }))}
+            options={priorityOptions}
+          />
         </div>
         <div>
           <Label>Goal Hours</Label>
@@ -78,8 +73,12 @@ function SubjectForm({ subject, onClose, onSave }) {
         <Label>Color</Label>
         <div className="flex gap-2 mt-2 flex-wrap">
           {COLORS.map(c => (
-            <button key={c} onClick={() => setForm(p => ({...p, color: c}))}
-              className={`w-7 h-7 rounded-full transition-all ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-card ring-white scale-110' : ''}`}
+            <button
+              key={c}
+              type="button"
+              aria-label={`Use color ${c}`}
+              onClick={() => setForm(p => ({...p, color: c}))}
+              className={`h-8 w-8 rounded-full border border-white/20 transition-all hover:scale-105 ${form.color?.toLowerCase() === c.toLowerCase() ? 'scale-110 ring-2 ring-primary ring-offset-2 ring-offset-card' : ''}`}
               style={{ backgroundColor: c }} />
           ))}
         </div>
@@ -100,10 +99,48 @@ export default function SubjectsPage() {
   const [editSubject, setEditSubject] = useState(null)
   const [filter, setFilter] = useState('all')
 
-  const { data: subjects, isLoading } = useQuery({ queryKey: ['subjects'], queryFn: () => subjectAPI.getAll(), select: d => d.data.data.subjects })
-  const createMutation = useMutation({ mutationFn: subjectAPI.create, onSuccess: () => qc.invalidateQueries(['subjects']) })
-  const updateMutation = useMutation({ mutationFn: ({ id, ...d }) => subjectAPI.update(id, d), onSuccess: () => qc.invalidateQueries(['subjects']) })
-  const deleteMutation = useMutation({ mutationFn: subjectAPI.delete, onSuccess: () => qc.invalidateQueries(['subjects']) })
+  const { data: subjects = [], isLoading } = useQuery({ queryKey: ['subjects'], queryFn: () => subjectAPI.getAll(), select: d => d.data.data.subjects })
+  const patchSubjectsCache = (updater) => {
+    qc.setQueryData(['subjects'], previous => {
+      if (Array.isArray(previous)) return updater(previous)
+      if (previous?.data?.data?.subjects) {
+        return {
+          ...previous,
+          data: {
+            ...previous.data,
+            data: {
+              ...previous.data.data,
+              subjects: updater(previous.data.data.subjects),
+            },
+          },
+        }
+      }
+      return previous
+    })
+  }
+  const createMutation = useMutation({ mutationFn: subjectAPI.create, onSuccess: () => qc.invalidateQueries({ queryKey: ['subjects'] }) })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...d }) => subjectAPI.update(id, d),
+    onMutate: async ({ id, ...updates }) => {
+      await qc.cancelQueries({ queryKey: ['subjects'] })
+      const previousSubjects = qc.getQueryData(['subjects'])
+      patchSubjectsCache(items => items.map(subject => subject._id === id ? { ...subject, ...updates, exam: updates.exam ? subject.exam : null } : subject))
+      setEditSubject(current => current?._id === id ? { ...current, ...updates } : current)
+      return { previousSubjects }
+    },
+    onSuccess: (response, variables) => {
+      const updatedSubject = response.data.data.subject
+      patchSubjectsCache(items => items.map(subject =>
+        subject._id === variables.id ? { ...subject, ...updatedSubject } : subject
+      ))
+      setEditSubject(null)
+      qc.refetchQueries({ queryKey: ['subjects'] })
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousSubjects) qc.setQueryData(['subjects'], context.previousSubjects)
+    },
+  })
+  const deleteMutation = useMutation({ mutationFn: subjectAPI.delete, onSuccess: () => qc.invalidateQueries({ queryKey: ['subjects'] }) })
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="w-6 h-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" /></div>
 
@@ -151,7 +188,7 @@ export default function SubjectsPage() {
                       <span className="text-muted-foreground">Progress</span>
                       <span className="font-medium">{s.completionPercentage || 0}%</span>
                     </div>
-                    <Progress value={s.completionPercentage || 0} indicatorClassName={''} style={{ '--indicator-color': s.color }} />
+                    <Progress value={s.completionPercentage || 0} indicatorStyle={{ backgroundColor: s.color }} />
                   </div>
 
                   <div className="flex items-center justify-between">

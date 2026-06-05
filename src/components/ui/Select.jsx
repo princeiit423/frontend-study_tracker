@@ -19,6 +19,10 @@ export function Select({ value, onValueChange, children, className }) {
   const contentRef = useRef(null)
 
   useEffect(() => {
+    if (value === '' || value === undefined || value === null) setSelectedLabel('')
+  }, [value])
+
+  useEffect(() => {
     const handlePointerDown = (event) => {
       const clickedInsideTrigger = triggerRef.current?.contains(event.target)
       const clickedInsideContent = contentRef.current?.contains(event.target)
@@ -98,6 +102,7 @@ export function SelectContent({ children, className }) {
   return createPortal(
     <div
       ref={contentRef}
+      data-select-content
       style={position ? { top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight } : undefined}
       className={cn('fixed z-[9999] overflow-y-auto rounded-xl border border-border bg-card/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.36),0_0_0_1px_hsl(var(--primary)/0.08)_inset] backdrop-blur-xl', className)}
     >

@@ -6,7 +6,7 @@ import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui/Select'
+import FancySelect from '../ui/FancySelect'
 import { sessionAPI, subjectAPI, topicAPI } from '../../lib/api'
 import { setActiveSession, setRunning, setElapsedSeconds } from '../../store/slices/sessionSlice'
 
@@ -24,6 +24,9 @@ export default function StartSessionModal({ open, onClose }) {
 
   const { data: subjects } = useQuery({ queryKey: ['subjects'], queryFn: () => subjectAPI.getAll(), select: d => d.data.data.subjects, enabled: open })
   const { data: topics } = useQuery({ queryKey: ['topics', form.subjectId], queryFn: () => topicAPI.getAll({ subjectId: form.subjectId }), select: d => d.data.data.topics, enabled: !!form.subjectId })
+  const subjectOptions = [{ value: '', label: 'No subject' }, ...(subjects || []).map(subject => ({ value: subject._id, label: subject.name, color: subject.color }))]
+  const topicOptions = [{ value: '', label: 'No topic' }, ...(topics || []).map(topic => ({ value: topic._id, label: topic.name }))]
+  const modeOptions = modes.map(mode => ({ value: mode.value, label: mode.label }))
 
   const handleStart = async () => {
     setLoading(true)
@@ -47,22 +50,24 @@ export default function StartSessionModal({ open, onClose }) {
         <div className="space-y-4">
           <div>
             <Label>Subject (optional)</Label>
-            <Select value={form.subjectId} onValueChange={v => setForm(p => ({...p, subjectId: v, topicId: ''}))}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder="Select subject..." /></SelectTrigger>
-              <SelectContent>
-                {subjects?.map(s => <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <FancySelect
+              className="mt-1"
+              value={form.subjectId}
+              onChange={subjectId => setForm(p => ({ ...p, subjectId, topicId: '' }))}
+              options={subjectOptions}
+              placeholder="Select subject..."
+            />
           </div>
           {form.subjectId && topics?.length > 0 && (
             <div>
               <Label>Topic (optional)</Label>
-              <Select value={form.topicId} onValueChange={v => setForm(p => ({...p, topicId: v}))}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select topic..." /></SelectTrigger>
-                <SelectContent>
-                  {topics.map(t => <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <FancySelect
+                className="mt-1"
+                value={form.topicId}
+                onChange={topicId => setForm(p => ({ ...p, topicId }))}
+                options={topicOptions}
+                placeholder="Select topic..."
+              />
             </div>
           )}
           <div>
@@ -80,12 +85,12 @@ export default function StartSessionModal({ open, onClose }) {
           </div>
           <div>
             <Label>Mode</Label>
-            <Select value={form.mode} onValueChange={v => setForm(p => ({...p, mode: v}))}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {modes.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <FancySelect
+              className="mt-1"
+              value={form.mode}
+              onChange={mode => setForm(p => ({ ...p, mode }))}
+              options={modeOptions}
+            />
           </div>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
