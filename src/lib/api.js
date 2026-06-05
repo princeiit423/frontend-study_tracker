@@ -100,7 +100,7 @@ export const examAPI = {
   getAll: () => api.get('/exams'),
   create: (data) => api.post('/exams', data),
   getOne: (id) => api.get(`/exams/${id}`),
-  update: (id, data) => api.put(`/exams/${id}`),
+  update: (id, data) => api.put(`/exams/${id}`, data),
   delete: (id) => api.delete(`/exams/${id}`),
   getReadiness: (id) => api.get(`/exams/${id}/readiness`),
 }
@@ -109,14 +109,14 @@ export const subjectAPI = {
   getAll: (params) => api.get('/subjects', { params }),
   create: (data) => api.post('/subjects', data),
   getOne: (id) => api.get(`/subjects/${id}`),
-  update: (id, data) => api.put(`/subjects/${id}`),
+  update: (id, data) => api.put(`/subjects/${id}`, data),
   delete: (id) => api.delete(`/subjects/${id}`),
 }
 
 export const topicAPI = {
   getAll: (params) => api.get('/topics', { params }),
   create: (data) => api.post('/topics', data),
-  update: (id, data) => api.put(`/topics/${id}`),
+  update: (id, data) => api.put(`/topics/${id}`, data),
   delete: (id) => api.delete(`/topics/${id}`),
   bulkUpdate: (updates) => api.put('/topics/bulk', { updates }),
 }
@@ -135,7 +135,7 @@ export const sessionAPI = {
 export const goalAPI = {
   getAll: (params) => api.get('/goals', { params }),
   create: (data) => api.post('/goals', data),
-  update: (id, data) => api.put(`/goals/${id}`),
+  update: (id, data) => api.put(`/goals/${id}`, data),
   delete: (id) => api.delete(`/goals/${id}`),
   sync: () => api.post('/goals/sync'),
 }
@@ -152,14 +152,14 @@ export const analyticsAPI = {
 export const noteAPI = {
   getAll: (params) => api.get('/notes', { params }),
   create: (data) => api.post('/notes', data),
-  update: (id, data) => api.put(`/notes/${id}`),
+  update: (id, data) => api.put(`/notes/${id}`, data),
   delete: (id) => api.delete(`/notes/${id}`),
 }
 
 export const mockTestAPI = {
   getAll: (params) => api.get('/mock-tests', { params }),
   create: (data) => api.post('/mock-tests', data),
-  update: (id, data) => api.put(`/mock-tests/${id}`),
+  update: (id, data) => api.put(`/mock-tests/${id}`, data),
   delete: (id) => api.delete(`/mock-tests/${id}`),
   getTrends: (params) => api.get('/mock-tests/trends', { params }),
 }

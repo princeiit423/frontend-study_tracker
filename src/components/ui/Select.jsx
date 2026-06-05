@@ -1,5 +1,4 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '../../lib/utils'
 import { ChevronDown } from 'lucide-react'
 
@@ -72,43 +71,18 @@ export function SelectTrigger({ children, className, ...props }) {
 }
 
 export function SelectContent({ children, className }) {
-  const { open, contentRef, triggerRef } = useContext(SelectContext) || {}
-  const [position, setPosition] = useState(null)
-
-  useLayoutEffect(() => {
-    if (!open || !triggerRef?.current) return
-
-    const updatePosition = () => {
-      const rect = triggerRef.current.getBoundingClientRect()
-      setPosition({
-        top: rect.bottom + 6,
-        left: rect.left,
-        width: rect.width,
-        maxHeight: Math.max(180, window.innerHeight - rect.bottom - 16),
-      })
-    }
-
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-    return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-    }
-  }, [open, triggerRef])
+  const { open, contentRef } = useContext(SelectContext) || {}
 
   if (!open) return null
 
-  return createPortal(
+  return (
     <div
       ref={contentRef}
       data-select-content
-      style={position ? { top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight } : undefined}
-      className={cn('fixed z-[9999] overflow-y-auto rounded-xl border border-border bg-card/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.36),0_0_0_1px_hsl(var(--primary)/0.08)_inset] backdrop-blur-xl', className)}
+      className={cn('absolute left-0 right-0 top-[calc(100%+0.35rem)] z-[140] max-h-64 overflow-y-auto rounded-xl border border-border bg-card/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.36),0_0_0_1px_hsl(var(--primary)/0.08)_inset] backdrop-blur-xl', className)}
     >
       {children}
-    </div>,
-    document.body
+    </div>
   )
 }
 
