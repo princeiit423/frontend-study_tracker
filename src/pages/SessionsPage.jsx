@@ -1,32 +1,56 @@
 import { useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Plus, Clock, Trash2, Play } from 'lucide-react'
-import { sessionAPI, subjectAPI } from '../lib/api'
+import { authAPI, examAPI, sessionAPI, subjectAPI, topicAPI } from '../lib/api'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/Select'
 import { Textarea } from '../components/ui/textarea'
+import FancySelect from '../components/ui/FancySelect'
 import StudyTimer from '../components/study/StudyTimer'
+import { setCredentials } from '../store/slices/authSlice'
 import { formatDuration, formatDate, formatRelativeTime, MOOD_COLORS } from '../lib/utils'
 
 function ManualSessionModal({ open, onClose }) {
   const qc = useQueryClient()
+  const dispatch = useDispatch()
+  const { data: exams } = useQuery({ queryKey: ['exams'], queryFn: () => examAPI.getAll(), select: d => d.data.data.exams, enabled: open })
   const { data: subjects } = useQuery({ queryKey: ['subjects'], queryFn: () => subjectAPI.getAll(), select: d => d.data.data.subjects, enabled: open })
-  const [form, setForm] = useState({ subjectId: '', title: '', startTime: '', endTime: '', notes: '', mood: 'neutral', focusScore: 7 })
+  const [form, setForm] = useState({ examId: '', subjectId: '', topicId: '', title: '', startTime: '', endTime: '', notes: '', mood: 'neutral', focusScore: 7 })
+  const { data: topics } = useQuery({ queryKey: ['topics', form.subjectId], queryFn: () => topicAPI.getAll({ subjectId: form.subjectId }), select: d => d.data.data.topics, enabled: open && !!form.subjectId })
   const [loading, setLoading] = useState(false)
+  const examOptions = [{ value: '', label: 'No exam' }, ...(exams || []).map(exam => ({ value: exam._id, label: exam.name, color: exam.color }))]
+  const subjectOptions = [{ value: '', label: 'No subject' }, ...(subjects || []).map(subject => ({ value: subject._id, label: subject.name, color: subject.color }))]
+  const topicOptions = [{ value: '', label: 'No topic' }, ...(topics || []).map(topic => ({ value: topic._id, label: topic.name }))]
   const mutation = useMutation({
     mutationFn: sessionAPI.addManual,
-    onSuccess: () => { qc.invalidateQueries(['sessions']); qc.invalidateQueries(['dashboard-stats']); onClose() }
+    onSuccess: async () => {
+      qc.invalidateQueries(['sessions'])
+      qc.invalidateQueries(['dashboard-stats'])
+      qc.invalidateQueries(['subjects'])
+      qc.invalidateQueries(['topics'])
+      qc.invalidateQueries(['exams'])
+      const { data } = await authAPI.getMe()
+      dispatch(setCredentials({ user: data.data.user }))
+      onClose()
+    }
   })
   const handleSubmit = async () => {
     if (!form.startTime || !form.endTime) return
     setLoading(true)
-    try { await mutation.mutateAsync({ ...form, subjectId: form.subjectId || undefined }) } catch (e) { console.error(e) } finally { setLoading(false) }
+    try {
+      await mutation.mutateAsync({
+        ...form,
+        examId: form.examId || undefined,
+        subjectId: form.subjectId || undefined,
+        topicId: form.topicId || undefined,
+      })
+    } catch (e) { console.error(e) } finally { setLoading(false) }
   }
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -34,13 +58,40 @@ function ManualSessionModal({ open, onClose }) {
         <DialogHeader><DialogTitle>Add Manual Session</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div>
+            <Label>Exam (optional)</Label>
+            <FancySelect
+              className="mt-1"
+              value={form.examId}
+              onChange={examId => setForm(p => ({...p, examId}))}
+              options={examOptions}
+              placeholder="Select exam..."
+            />
+          </div>
+          <div>
             <Label>Subject (optional)</Label>
-            <Select value={form.subjectId} onValueChange={v => setForm(p => ({...p, subjectId: v}))}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder="Select subject..." /></SelectTrigger>
-              <SelectContent>
-                {subjects?.map(s => <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <FancySelect
+              className="mt-1"
+              value={form.subjectId}
+              onChange={subjectId => setForm(p => ({...p, subjectId, topicId: ''}))}
+              options={subjectOptions}
+              placeholder="Select subject..."
+            />
+          </div>
+          {form.subjectId && topics?.length > 0 && (
+            <div>
+              <Label>Topic (optional)</Label>
+              <FancySelect
+                className="mt-1"
+                value={form.topicId}
+                onChange={topicId => setForm(p => ({...p, topicId}))}
+                options={topicOptions}
+                placeholder="Select topic..."
+              />
+            </div>
+          )}
+          <div>
+            <Label>Session Title (optional)</Label>
+            <Input className="mt-1" placeholder="e.g. Mock test review..." value={form.title} onChange={e => setForm(p => ({...p, title: e.target.value}))} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -68,6 +119,7 @@ function ManualSessionModal({ open, onClose }) {
 
 export default function SessionsPage() {
   const qc = useQueryClient()
+  const dispatch = useDispatch()
   const [showManual, setShowManual] = useState(false)
   const [page, setPage] = useState(1)
 
@@ -78,7 +130,18 @@ export default function SessionsPage() {
     select: d => d.data.data,
   })
 
-  const deleteMutation = useMutation({ mutationFn: sessionAPI.delete, onSuccess: () => qc.invalidateQueries(['sessions']) })
+  const deleteMutation = useMutation({
+    mutationFn: sessionAPI.delete,
+    onSuccess: async () => {
+      qc.invalidateQueries(['sessions'])
+      qc.invalidateQueries(['dashboard-stats'])
+      qc.invalidateQueries(['subjects'])
+      qc.invalidateQueries(['topics'])
+      qc.invalidateQueries(['exams'])
+      const { data } = await authAPI.getMe()
+      dispatch(setCredentials({ user: data.data.user }))
+    }
+  })
 
   const sessions = data?.sessions || []
   const pagination = data?.pagination
@@ -113,6 +176,7 @@ export default function SessionsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm">{s.subject?.name || 'General Study'}</span>
                     {s.topic && <span className="text-xs text-muted-foreground">· {s.topic.name}</span>}
+                    {s.exam && <span className="text-xs text-muted-foreground">· {s.exam.name}</span>}
                     {s.title && <span className="text-xs text-muted-foreground">· {s.title}</span>}
                   </div>
                   <div className="flex items-center gap-3 mt-1">

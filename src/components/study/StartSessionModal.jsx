@@ -7,7 +7,7 @@ import { Label } from '../ui/label'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import FancySelect from '../ui/FancySelect'
-import { sessionAPI, subjectAPI, topicAPI } from '../../lib/api'
+import { examAPI, sessionAPI, subjectAPI, topicAPI } from '../../lib/api'
 import { setActiveSession, setRunning, setElapsedSeconds } from '../../store/slices/sessionSlice'
 
 const modes = [
@@ -19,11 +19,13 @@ const modes = [
 export default function StartSessionModal({ open, onClose }) {
   const dispatch = useDispatch()
   const qc = useQueryClient()
-  const [form, setForm] = useState({ subjectId: '', topicId: '', title: '', intent: '', mode: 'standard' })
+  const [form, setForm] = useState({ subjectId: '', topicId: '', examId: '', title: '', intent: '', mode: 'standard' })
   const [loading, setLoading] = useState(false)
 
+  const { data: exams } = useQuery({ queryKey: ['exams'], queryFn: () => examAPI.getAll(), select: d => d.data.data.exams, enabled: open })
   const { data: subjects } = useQuery({ queryKey: ['subjects'], queryFn: () => subjectAPI.getAll(), select: d => d.data.data.subjects, enabled: open })
   const { data: topics } = useQuery({ queryKey: ['topics', form.subjectId], queryFn: () => topicAPI.getAll({ subjectId: form.subjectId }), select: d => d.data.data.topics, enabled: !!form.subjectId })
+  const examOptions = [{ value: '', label: 'No exam' }, ...(exams || []).map(exam => ({ value: exam._id, label: exam.name, color: exam.color }))]
   const subjectOptions = [{ value: '', label: 'No subject' }, ...(subjects || []).map(subject => ({ value: subject._id, label: subject.name, color: subject.color }))]
   const topicOptions = [{ value: '', label: 'No topic' }, ...(topics || []).map(topic => ({ value: topic._id, label: topic.name }))]
   const modeOptions = modes.map(mode => ({ value: mode.value, label: mode.label }))
@@ -32,7 +34,13 @@ export default function StartSessionModal({ open, onClose }) {
     setLoading(true)
     try {
       const title = form.title.trim() || form.intent.trim()
-      const { data } = await sessionAPI.start({ subjectId: form.subjectId || undefined, topicId: form.topicId || undefined, title, mode: form.mode })
+      const { data } = await sessionAPI.start({
+        subjectId: form.subjectId || undefined,
+        topicId: form.topicId || undefined,
+        examId: form.examId || undefined,
+        title,
+        mode: form.mode,
+      })
       dispatch(setActiveSession(data.data.session))
       dispatch(setRunning(true))
       dispatch(setElapsedSeconds(0))
@@ -48,6 +56,16 @@ export default function StartSessionModal({ open, onClose }) {
           <DialogTitle>Start Study Session</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div>
+            <Label>Exam (optional)</Label>
+            <FancySelect
+              className="mt-1"
+              value={form.examId}
+              onChange={examId => setForm(p => ({ ...p, examId }))}
+              options={examOptions}
+              placeholder="Select exam..."
+            />
+          </div>
           <div>
             <Label>Subject (optional)</Label>
             <FancySelect

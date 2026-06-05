@@ -5,8 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
-import { sessionAPI } from '../../lib/api'
+import { authAPI, sessionAPI } from '../../lib/api'
 import { clearActiveSession } from '../../store/slices/sessionSlice'
+import { setCredentials } from '../../store/slices/authSlice'
 import { formatDuration } from '../../lib/utils'
 
 const moods = ['terrible','bad','neutral','good','great']
@@ -41,7 +42,11 @@ export default function StopSessionModal({ open, onClose, session, elapsed, extr
       qc.invalidateQueries(['active-session'])
       qc.invalidateQueries(['sessions'])
       qc.invalidateQueries(['dashboard-stats'])
+      qc.invalidateQueries(['subjects'])
+      qc.invalidateQueries(['topics'])
       qc.invalidateQueries(['exams'])
+      const { data } = await authAPI.getMe()
+      dispatch(setCredentials({ user: data.data.user }))
       onClose()
     } catch (e) { console.error(e) } finally { setLoading(false) }
   }

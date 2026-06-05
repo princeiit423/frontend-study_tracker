@@ -75,6 +75,12 @@ export default function StudyTimer({ activeSession: externalSession }) {
   const [showStop, setShowStop] = useState(false)
   const timerRef = useRef(null)
   const lastAlertRef = useRef(0)
+  const sessionLabel = activeSession ? [
+    activeSession.subject?.name || 'General Study',
+    activeSession.topic?.name,
+    activeSession.exam?.name,
+    activeSession.title,
+  ].filter(Boolean).join(' - ') : ''
 
   // Sync external session
   useEffect(() => {
@@ -177,9 +183,7 @@ export default function StudyTimer({ activeSession: externalSession }) {
           <div className="min-w-0">
             <p className="text-sm font-bold">{isPaused ? 'Session paused' : 'Active study session'}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {activeSession.subject?.name && <span className="text-foreground font-medium">{activeSession.subject.name}</span>}
-              {activeSession.topic?.name && <span> - {activeSession.topic.name}</span>}
-              {!activeSession.subject && 'General Study'}
+              <span className="text-foreground font-medium">{sessionLabel}</span>
               {isPaused && <span className="ml-2 text-yellow-500">- Paused</span>}
             </p>
           </div>
