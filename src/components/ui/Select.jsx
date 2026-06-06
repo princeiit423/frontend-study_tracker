@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../../lib/utils'
 import { ChevronDown } from 'lucide-react'
 
@@ -11,7 +12,7 @@ function getLabelText(children) {
   return ''
 }
 
-export function Select({ value, onValueChange, children, className }) {
+export function Select({ value, onValueChange, children, className, portal = true }) {
   const [selectedLabel, setSelectedLabel] = useState('')
   const [open, setOpen] = useState(false)
   const triggerRef = useRef(null)
@@ -39,12 +40,13 @@ export function Select({ value, onValueChange, children, className }) {
     setOpen,
     triggerRef,
     contentRef,
+    portal,
     onValueChange: (nextValue, nextLabel) => {
       setSelectedLabel(nextLabel || '')
       onValueChange?.(nextValue)
       setOpen(false)
     },
-  }), [value, selectedLabel, open, onValueChange])
+  }), [value, selectedLabel, open, portal, onValueChange])
 
   return (
     <SelectContext.Provider value={contextValue}>
@@ -71,19 +73,49 @@ export function SelectTrigger({ children, className, ...props }) {
 }
 
 export function SelectContent({ children, className }) {
-  const { open, contentRef } = useContext(SelectContext) || {}
+  const { open, contentRef, triggerRef, portal } = useContext(SelectContext) || {}
+  const [position, setPosition] = useState(null)
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef?.current) return
+
+    const updatePosition = () => {
+      const rect = triggerRef.current.getBoundingClientRect()
+      setPosition({
+        left: rect.left,
+        top: rect.bottom + 6,
+        width: rect.width,
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, triggerRef])
 
   if (!open) return null
 
-  return (
+  const content = (
     <div
       ref={contentRef}
       data-select-content
-      className={cn('absolute left-0 right-0 top-[calc(100%+0.35rem)] z-[140] max-h-64 overflow-y-auto rounded-xl border border-border bg-card/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.36),0_0_0_1px_hsl(var(--primary)/0.08)_inset] backdrop-blur-xl', className)}
+      style={portal ? position || undefined : undefined}
+      className={cn(
+        portal
+          ? 'fixed z-[1000] max-h-64 overflow-y-auto rounded-xl border border-border bg-card/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.36),0_0_0_1px_hsl(var(--primary)/0.08)_inset] backdrop-blur-xl'
+          : 'absolute left-0 right-0 top-[calc(100%+0.35rem)] z-[140] max-h-64 overflow-y-auto rounded-xl border border-border bg-card/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.36),0_0_0_1px_hsl(var(--primary)/0.08)_inset] backdrop-blur-xl',
+        className,
+      )}
     >
       {children}
     </div>
   )
+
+  return portal ? createPortal(content, document.body) : content
 }
 
 export function SelectItem({ value, children, className }) {

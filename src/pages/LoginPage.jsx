@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
-import { BookOpen, Eye, EyeOff, Lock, LogIn, Mail, Target, TrendingUp, User, UserPlus, Zap } from 'lucide-react'
+import { BookOpen, Compass, Eye, EyeOff, Lock, LogIn, Mail, Target, TrendingUp, User, UserPlus, Zap } from 'lucide-react'
 import { authAPI } from '../lib/api'
-import { setCredentials, selectIsAuthenticated, selectUser } from '../store/slices/authSlice'
+import { continueAsGuest, setCredentials, selectIsAuthenticated, selectIsGuest, selectUser } from '../store/slices/authSlice'
 
 const features = [
   { icon: Target, title: 'Smart Exam Tracking', desc: 'Track any exam - JEE, UPSC, CAT, or your own' },
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const isAuthenticated = useSelector(selectIsAuthenticated)
+  const isGuest = useSelector(selectIsGuest)
   const user = useSelector(selectUser)
   const [mode, setMode] = useState('login')
   const [showPassword, setShowPassword] = useState(false)
@@ -26,10 +27,10 @@ export default function LoginPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', token: '' })
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isGuest) {
       navigate(user && !user.isOnboarded ? '/onboarding' : '/dashboard', { replace: true })
     }
-  }, [isAuthenticated, navigate, user])
+  }, [isAuthenticated, isGuest, navigate, user])
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -77,6 +78,11 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleGuestAccess = () => {
+    dispatch(continueAsGuest())
+    navigate('/dashboard', { replace: true })
   }
 
   return (
@@ -260,6 +266,21 @@ export default function LoginPage() {
                 </button>
               )}
             </form>
+
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-[10px] font-bold uppercase text-muted-foreground">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGuestAccess}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-bold text-foreground transition hover:border-primary/45 hover:bg-accent/70"
+            >
+              <Compass size={15} />
+              Explore as Guest
+            </button>
           </div>
 
           <p className="mt-4 text-xs text-muted-foreground text-center">

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Check, ChevronRight, Menu } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { selectUser } from '../../store/slices/authSlice'
+import { selectIsGuest, selectUser } from '../../store/slices/authSlice'
 import { setSidebarCollapsed } from '../../store/slices/uiSlice'
 import { notificationAPI } from '../../lib/api'
 import { formatHours } from '../../lib/utils'
@@ -11,6 +11,7 @@ import { getAvatarSrc } from '../../lib/avatar'
 
 export default function TopBar() {
   const user = useSelector(selectUser)
+  const isGuest = useSelector(selectIsGuest)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -51,6 +52,15 @@ export default function TopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {isGuest && (
+          <button
+            onClick={() => navigate('/login')}
+            className="hidden rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/15 sm:block"
+          >
+            Guest Preview - Sign in to save
+          </button>
+        )}
+
         {user && (
           <div className="mr-2 hidden items-center gap-1.5 rounded-xl border border-border bg-card/55 px-3 py-1.5 text-xs text-muted-foreground shadow-[0_10px_28px_rgba(0,0,0,0.14)] backdrop-blur-xl sm:flex">
             <span className="font-semibold text-primary">{user.currentStreak || 0}</span>

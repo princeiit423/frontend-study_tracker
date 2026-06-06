@@ -10,8 +10,128 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+const guestResponse = (config, data, message = 'Guest preview data') => Promise.resolve({
+  data: { success: true, data, message },
+  status: 200,
+  statusText: 'OK',
+  headers: {},
+  config,
+})
+
+const emptyPagination = { total: 0, page: 1, limit: 20, pages: 0 }
+
+const guestId = () => `guest-${Date.now()}`
+const requestBody = (config) => {
+  if (!config.data) return {}
+  if (typeof config.data === 'string') {
+    try { return JSON.parse(config.data) } catch { return {} }
+  }
+  return config.data
+}
+
+const getGuestData = (config) => {
+  const method = (config.method || 'get').toLowerCase()
+  const url = config.url || ''
+  const isWrite = method !== 'get'
+  const body = requestBody(config)
+
+  if (url.includes('/auth/logout')) return {}
+  if (url.includes('/auth/me')) return { user: store.getState().auth.user }
+  if (url.includes('/analytics/dashboard')) {
+    return {
+      stats: {
+        today: { hours: 0, sessions: 0, goal: 4, progress: 0 },
+        week: { hours: 0, sessions: 0, goal: 28, progress: 0 },
+        month: { hours: 0, sessions: 0 },
+        year: { hours: 0, sessions: 0 },
+        total: { hours: 0, sessions: 0 },
+        streak: { current: 0, longest: 0 },
+        gamification: { xp: 0, level: 1 },
+      },
+    }
+  }
+  if (url.includes('/analytics/heatmap')) return { heatmap: [], year: new Date().getFullYear() }
+  if (url.includes('/analytics/subjects')) return { distribution: [] }
+  if (url.includes('/analytics/weekly')) return { chart: [] }
+  if (url.includes('/analytics/daily')) return { chart: [] }
+  if (url.includes('/analytics/insights')) {
+    return {
+      mostProductiveDay: { day: 'Mon', hours: 0, count: 0 },
+      mostProductiveHour: { hour: undefined, hours: 0, count: 0 },
+      avgFocusScore: 0,
+      avgSessionLengthMinutes: 0,
+      totalSessions: 0,
+    }
+  }
+  if (url.includes('/sessions/active')) return { session: null }
+  if (url.includes('/sessions')) {
+    return isWrite
+      ? {
+          session: {
+            _id: guestId(),
+            title: body.title || 'Guest study session',
+            subject: null,
+            topic: null,
+            exam: null,
+            startTime: new Date().toISOString(),
+            totalPausedTime: 0,
+            isActive: true,
+            isPaused: false,
+            mode: body.mode || 'standard',
+            duration: 0,
+            xpEarned: 0,
+          },
+          xpEarned: 0,
+        }
+      : { sessions: [], pagination: emptyPagination }
+  }
+  if (url.includes('/subjects')) {
+    return isWrite
+      ? { subject: { _id: guestId(), name: body.name || 'Guest Subject', color: body.color || '#3b82f6', priority: body.priority || 'medium', goalHours: body.goalHours || 0, totalStudyHours: 0, completionPercentage: 0, exam: null } }
+      : { subjects: [] }
+  }
+  if (url.includes('/topics')) {
+    return isWrite
+      ? { topic: { _id: guestId(), name: body.name || 'Guest Topic', subject: body.subjectId || body.subject || null, isCompleted: false, priority: body.priority || 'medium', difficulty: body.difficulty || 'medium' } }
+      : { topics: [] }
+  }
+  if (url.includes('/exams')) {
+    return isWrite
+      ? { exam: { _id: guestId(), name: body.name || 'Guest Exam', examDate: body.examDate || new Date().toISOString(), category: body.category || '', subjects: [], readinessScore: 0 }, prediction: {} }
+      : { exams: [] }
+  }
+  if (url.includes('/goals/sync')) return { goals: [] }
+  if (url.includes('/goals')) return isWrite ? { goal: { _id: guestId(), title: body.title || 'Guest Goal', targetValue: body.targetValue || 1, currentValue: 0, unit: body.unit || '', isCompleted: false, isActive: true } } : { goals: [] }
+  if (url.includes('/notes')) return isWrite ? { note: { _id: guestId(), title: body.title || 'Guest Note', content: body.content || '', createdAt: new Date().toISOString() } } : { notes: [], pagination: emptyPagination }
+  if (url.includes('/mock-tests')) return isWrite ? { test: { _id: guestId(), name: body.name || 'Guest Mock Test', score: body.score || 0, maxScore: body.maxScore || 0 } } : { tests: [], trends: [] }
+  if (url.includes('/notifications')) return isWrite ? {} : { notifications: [], unreadCount: 0, pagination: emptyPagination }
+  if (url.includes('/achievements')) return { achievements: [], unlocked: [] }
+  if (url.includes('/leaderboard')) return { leaderboard: [] }
+  if (url.includes('/tasks')) return isWrite ? { task: { _id: guestId(), title: body.title || 'Guest Task', date: body.date || new Date().toISOString().split('T')[0], priority: body.priority || 'medium', isCompleted: false } } : { tasks: [] }
+  if (url.includes('/calendar')) return isWrite ? { event: { _id: guestId(), title: body.title || 'Guest Event', date: body.date || new Date().toISOString().split('T')[0], type: body.type || 'event', color: body.color || '#3b82f6' } } : { events: [] }
+  if (url.includes('/study-plans')) return isWrite ? { plan: { _id: guestId(), title: body.title || 'Guest Study Plan', days: [] } } : { plans: [] }
+  if (url.includes('/revisions')) return isWrite ? { revision: { _id: guestId(), subject: body.subject || null, schedule: [] } } : { revisions: [] }
+  if (url.includes('/coach/weakness')) return { weakTopics: [], openMistakes: [] }
+  if (url.includes('/coach/queue')) return { queue: [] }
+  if (url.includes('/coach/weekly-report')) return { recommendation: 'Explore the app, then create an account to save your plan.', hours: 0, sessions: 0 }
+  if (url.includes('/coach')) return {}
+  if (url.includes('/motivation')) return isWrite ? { item: { _id: guestId(), title: body.title || 'Guest Motivation', body: body.body || '', type: body.type || 'reason' } } : { items: [] }
+  if (url.includes('/mistakes')) return isWrite ? { mistake: { _id: guestId(), mistake: body.mistake || 'Guest mistake', reason: body.reason || 'other', isResolved: false } } : { mistakes: [], trends: [] }
+  if (url.includes('/users/stats')) return { stats: {} }
+  if (url.includes('/users/export')) return { export: {}, guest: true }
+  if (url.includes('/users')) return { user: store.getState().auth.user }
+  if (url.includes('/admin')) return { counts: {}, recentUsers: [], users: [] }
+  return {}
+}
+
 api.interceptors.request.use((config) => {
-  const token = store.getState().auth.accessToken
+  const state = store.getState()
+  if (state.auth.isGuest) {
+    config.adapter = () => guestResponse(config, getGuestData(config))
+    return config
+  }
+
+  const token = state.auth.accessToken
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 }, (error) => Promise.reject(error))

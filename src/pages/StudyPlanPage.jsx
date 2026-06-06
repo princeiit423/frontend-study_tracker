@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Wand2 } from 'lucide-react'
+import { CheckCircle2, Trash2, Wand2 } from 'lucide-react'
 import { examAPI, studyPlanAPI, subjectAPI } from '../lib/api'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
@@ -16,6 +16,7 @@ export default function StudyPlanPage() {
   const [form, setForm] = useState({ title: 'My Study Plan', exam: '', examDate: '', dailyHours: 4, weakSubjects: [] })
   const generateMutation = useMutation({ mutationFn: studyPlanAPI.generate, onSuccess: () => qc.invalidateQueries(['study-plans']) })
   const updateDayMutation = useMutation({ mutationFn: ({ planId, dayId, ...data }) => studyPlanAPI.updateDay(planId, dayId, data), onSuccess: () => qc.invalidateQueries(['study-plans']) })
+  const deleteMutation = useMutation({ mutationFn: studyPlanAPI.delete, onSuccess: () => qc.invalidateQueries(['study-plans']) })
 
   const selectedExam = exams.find(e => e._id === form.exam)
   const generate = () => generateMutation.mutate({
@@ -25,6 +26,11 @@ export default function StudyPlanPage() {
     weakSubjects: form.weakSubjects,
     subjects: subjects.map(s => s._id),
   })
+
+  const deletePlan = (plan) => {
+    const confirmed = window.confirm(`Delete "${plan.title}"? This will remove the full study plan.`)
+    if (confirmed) deleteMutation.mutate(plan._id)
+  }
 
   return (
     <div className="space-y-6">
@@ -80,7 +86,19 @@ export default function StudyPlanPage() {
       </Card>
       {plans.map(plan => (
         <Card key={plan._id}>
-          <CardHeader><CardTitle>{plan.title}</CardTitle></CardHeader>
+          <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
+            <CardTitle>{plan.title}</CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+              onClick={() => deletePlan(plan)}
+              disabled={deleteMutation.isPending}
+              title="Delete study plan"
+            >
+              <Trash2 size={14} />
+            </Button>
+          </CardHeader>
           <CardContent>
             <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
               {plan.days.slice(0, 30).map(day => (

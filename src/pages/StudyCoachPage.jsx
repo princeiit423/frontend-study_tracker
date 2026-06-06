@@ -49,6 +49,8 @@ export default function StudyCoachPage() {
   const [motivationForm, setMotivationForm] = useState(emptyMotivationForm)
   const [mistakeForm, setMistakeForm] = useState(emptyMistakeForm)
   const [importForm, setImportForm] = useState({ subjectId: '', syllabus: '' })
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
 
   const { data: queue = [] } = useQuery({
     queryKey: ['coach-queue'],
@@ -82,15 +84,27 @@ export default function StudyCoachPage() {
   })
 
   const refreshCoach = () => {
-    qc.invalidateQueries(['coach-queue'])
-    qc.invalidateQueries(['coach-weakness'])
-    qc.invalidateQueries(['coach-weekly-report'])
-    qc.invalidateQueries(['mistakes'])
-    qc.invalidateQueries(['motivation'])
-    qc.invalidateQueries(['subjects'])
-    qc.invalidateQueries(['topics'])
-    qc.invalidateQueries(['tasks'])
-    qc.invalidateQueries(['notes'])
+    qc.invalidateQueries({ queryKey: ['coach-queue'] })
+    qc.invalidateQueries({ queryKey: ['coach-weakness'] })
+    qc.invalidateQueries({ queryKey: ['coach-weekly-report'] })
+    qc.invalidateQueries({ queryKey: ['mistakes'] })
+    qc.invalidateQueries({ queryKey: ['motivation'] })
+    qc.invalidateQueries({ queryKey: ['subjects'] })
+    qc.invalidateQueries({ queryKey: ['topics'] })
+    qc.invalidateQueries({ queryKey: ['topics-all'] })
+    qc.invalidateQueries({ queryKey: ['tasks'] })
+    qc.invalidateQueries({ queryKey: ['notes'] })
+  }
+
+  const runAction = async (action, successMessage) => {
+    setError('')
+    setNotice('')
+    try {
+      await action()
+      if (successMessage) setNotice(successMessage)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Action failed. Please try again.')
+    }
   }
 
   const quickMutation = useMutation({ mutationFn: coachAPI.quickCapture, onSuccess: refreshCoach })
@@ -108,37 +122,48 @@ export default function StudyCoachPage() {
 
   const addQuickCapture = async () => {
     if (!quickText.trim()) return
-    await quickMutation.mutateAsync({ text: quickText.trim() })
-    setQuickText('')
+    await runAction(async () => {
+      await quickMutation.mutateAsync({ text: quickText.trim() })
+      setQuickText('')
+    }, 'Captured successfully.')
   }
 
   const addMotivation = async () => {
     if (!motivationForm.title.trim()) return
-    await motivationCreate.mutateAsync({
-      ...motivationForm,
-      title: motivationForm.title.trim(),
-      body: motivationForm.body.trim(),
-    })
-    setMotivationForm(emptyMotivationForm)
+    await runAction(async () => {
+      await motivationCreate.mutateAsync({
+        ...motivationForm,
+        title: motivationForm.title.trim(),
+        body: motivationForm.body.trim(),
+      })
+      setMotivationForm(emptyMotivationForm)
+    }, 'Motivation added.')
   }
 
   const addMistake = async () => {
     if (!mistakeForm.mistake.trim()) return
-    await mistakeCreate.mutateAsync({
-      ...mistakeForm,
-      subject: mistakeForm.subject === '__none' ? null : mistakeForm.subject,
-      topic: mistakeForm.topic.trim(),
-      question: mistakeForm.question.trim(),
-      mistake: mistakeForm.mistake.trim(),
-      fix: mistakeForm.fix.trim(),
-    })
-    setMistakeForm(emptyMistakeForm)
+    await runAction(async () => {
+      await mistakeCreate.mutateAsync({
+        ...mistakeForm,
+        subject: mistakeForm.subject === '__none' ? null : mistakeForm.subject,
+        topic: mistakeForm.topic.trim(),
+        question: mistakeForm.question.trim(),
+        mistake: mistakeForm.mistake.trim(),
+        fix: mistakeForm.fix.trim(),
+      })
+      setMistakeForm(emptyMistakeForm)
+    }, 'Mistake added.')
   }
 
   const importSyllabus = async () => {
     if (!importForm.subjectId || !importForm.syllabus.trim()) return
-    await importMutation.mutateAsync(importForm)
-    setImportForm({ subjectId: '', syllabus: '' })
+    await runAction(async () => {
+      const response = await importMutation.mutateAsync(importForm)
+      const created = response.data.data.created || 0
+      const skipped = response.data.data.skipped || 0
+      setImportForm({ subjectId: '', syllabus: '' })
+      setNotice(`Imported ${created} topic${created === 1 ? '' : 's'}${skipped ? `, skipped ${skipped} duplicate${skipped === 1 ? '' : 's'}` : ''}.`)
+    })
   }
 
   return (
@@ -154,6 +179,9 @@ export default function StudyCoachPage() {
         </div>
       </div>
 
+      {error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</div>}
+      {notice && <div className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-semibold text-primary">{notice}</div>}
+
       <Card>
         <CardContent className="p-4">
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
@@ -165,7 +193,7 @@ export default function StudyCoachPage() {
             />
             <Button onClick={addQuickCapture} disabled={quickMutation.isPending || !quickText.trim()}>
               <Zap size={16} />
-              Capture
+              {quickMutation.isPending ? 'Capturing...' : 'Capture'}
             </Button>
           </div>
         </CardContent>
@@ -252,19 +280,21 @@ export default function StudyCoachPage() {
                 </SelectContent>
               </Select>
               <Textarea className="sm:col-span-2" placeholder="Add detail, reward, promise, or reminder..." value={motivationForm.body} onChange={e => setMotivationForm(p => ({ ...p, body: e.target.value }))} />
-              <Button className="sm:col-span-2" onClick={addMotivation} disabled={!motivationForm.title.trim()}><Plus size={16} /> Add Motivation</Button>
+              <Button className="sm:col-span-2" onClick={addMotivation} disabled={motivationCreate.isPending || !motivationForm.title.trim()}>
+                <Plus size={16} /> {motivationCreate.isPending ? 'Adding...' : 'Add Motivation'}
+              </Button>
             </div>
             <div className="space-y-2">
               {pinnedMotivations.slice(0, 5).map(item => (
                 <div key={item._id} className="flex items-start gap-3 rounded-lg border border-border bg-background/70 p-3">
-                  <button onClick={() => motivationUpdate.mutate({ id: item._id, isPinned: !item.isPinned })} className="mt-0.5 text-primary">
+                  <button disabled={motivationUpdate.isPending} onClick={() => runAction(() => motivationUpdate.mutateAsync({ id: item._id, isPinned: !item.isPinned }))} className="mt-0.5 text-primary disabled:opacity-50">
                     <Pin size={15} fill={item.isPinned ? 'currentColor' : 'none'} />
                   </button>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold">{item.title}</p>
                     {item.body && <p className="mt-1 text-xs text-muted-foreground">{item.body}</p>}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => motivationDelete.mutate(item._id)}><Trash2 size={14} /></Button>
+                  <Button variant="ghost" size="icon" disabled={motivationDelete.isPending} onClick={() => runAction(() => motivationDelete.mutateAsync(item._id), 'Motivation deleted.')}><Trash2 size={14} /></Button>
                 </div>
               ))}
               {motivations.length === 0 && <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">Add a reason, reward, or promise.</div>}
@@ -297,7 +327,9 @@ export default function StudyCoachPage() {
               <Input placeholder="Question or source" value={mistakeForm.question} onChange={e => setMistakeForm(p => ({ ...p, question: e.target.value }))} />
               <Textarea className="sm:col-span-2" placeholder="What went wrong?" value={mistakeForm.mistake} onChange={e => setMistakeForm(p => ({ ...p, mistake: e.target.value }))} />
               <Textarea className="sm:col-span-2" placeholder="Fix rule for next time..." value={mistakeForm.fix} onChange={e => setMistakeForm(p => ({ ...p, fix: e.target.value }))} />
-              <Button className="sm:col-span-2" onClick={addMistake} disabled={!mistakeForm.mistake.trim()}><Plus size={16} /> Add Mistake</Button>
+              <Button className="sm:col-span-2" onClick={addMistake} disabled={mistakeCreate.isPending || !mistakeForm.mistake.trim()}>
+                <Plus size={16} /> {mistakeCreate.isPending ? 'Adding...' : 'Add Mistake'}
+              </Button>
             </div>
             <div className="space-y-2">
               {mistakes.slice(0, 5).map(item => (
@@ -308,8 +340,8 @@ export default function StudyCoachPage() {
                       <p className="mt-1 text-xs text-muted-foreground">{item.subject?.name || 'General'} - {item.topic?.name || item.topicText || 'No topic'} - {reasonOptions.find(r => r.value === item.reason)?.label || item.reason}</p>
                       {item.fix && <p className="mt-2 text-xs font-semibold text-primary">{item.fix}</p>}
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => mistakeUpdate.mutate({ id: item._id, isResolved: true })}><CheckCircle2 size={14} /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => mistakeDelete.mutate(item._id)}><Trash2 size={14} /></Button>
+                    <Button variant="ghost" size="icon" disabled={mistakeUpdate.isPending} onClick={() => runAction(() => mistakeUpdate.mutateAsync({ id: item._id, isResolved: true }), 'Mistake resolved.')}><CheckCircle2 size={14} /></Button>
+                    <Button variant="ghost" size="icon" disabled={mistakeDelete.isPending} onClick={() => runAction(() => mistakeDelete.mutateAsync(item._id), 'Mistake deleted.')}><Trash2 size={14} /></Button>
                   </div>
                 </div>
               ))}
@@ -331,6 +363,7 @@ export default function StudyCoachPage() {
                   {subjects.map(subject => <SelectItem key={subject._id} value={subject._id}>{subject.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {subjects.length === 0 && <p className="mt-2 text-xs text-muted-foreground">Create a subject first, then import syllabus topics here.</p>}
             </div>
             <div>
               <Label>Topics</Label>
@@ -341,9 +374,9 @@ export default function StudyCoachPage() {
                 onChange={e => setImportForm(p => ({ ...p, syllabus: e.target.value }))}
               />
             </div>
-            <Button className="w-full" onClick={importSyllabus} disabled={!importForm.subjectId || !importForm.syllabus.trim()}>
+            <Button className="w-full" onClick={importSyllabus} disabled={importMutation.isPending || !importForm.subjectId || !importForm.syllabus.trim()}>
               <Import size={16} />
-              Import Topics
+              {importMutation.isPending ? 'Importing...' : 'Import Topics'}
             </Button>
           </CardContent>
         </Card>

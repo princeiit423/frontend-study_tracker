@@ -65,7 +65,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="overflow-visible">
         <CardContent className="grid gap-3 p-4 lg:grid-cols-[1fr_160px_140px_130px_auto]">
           <div>
             <Label>Important Date</Label>

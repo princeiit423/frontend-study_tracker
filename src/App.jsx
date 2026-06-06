@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { authAPI } from './lib/api'
-import { setCredentials, logout, selectIsAuthenticated, selectIsLoading, selectUser } from './store/slices/authSlice'
+import { setCredentials, logout, selectIsAuthenticated, selectIsLoading, selectUser, selectIsGuest, setLoading } from './store/slices/authSlice'
 
 // Pages
 import LoginPage from './pages/LoginPage'
@@ -43,6 +43,7 @@ function OnboardingGuard({ children }) {
   const user = useSelector(selectUser)
   const isLoading = useSelector(selectIsLoading)
   if (isLoading) return <SplashScreen />
+  if (user?.isGuest) return children
   if (user && !user.isOnboarded) return <Navigate to="/onboarding" replace />
   return children
 }
@@ -59,9 +60,15 @@ const ACCENT_MAP = {
 export default function App() {
   const dispatch = useDispatch()
   const isLoading = useSelector(selectIsLoading)
+  const isGuest = useSelector(selectIsGuest)
 
   useEffect(() => {
     const initAuth = async () => {
+      if (isGuest) {
+        dispatch(setLoading(false))
+        return
+      }
+
       try {
         const { data } = await authAPI.getMe()
         dispatch(setCredentials({ user: data.data.user }))
@@ -78,7 +85,7 @@ export default function App() {
     }
 
     initAuth()
-  }, [dispatch])
+  }, [dispatch, isGuest])
 
   const user = useSelector(selectUser)
   useEffect(() => {

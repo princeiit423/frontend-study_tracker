@@ -33,7 +33,7 @@ function TopicForm({ subjectId, onClose, onSave }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label>Priority</Label>
-          <Select value={form.priority} onValueChange={v => setForm(p => ({...p, priority: v}))}>
+          <Select value={form.priority} onValueChange={v => setForm(p => ({...p, priority: v}))} portal={false}>
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               {['low','medium','high','critical'].map(p => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
@@ -42,7 +42,7 @@ function TopicForm({ subjectId, onClose, onSave }) {
         </div>
         <div>
           <Label>Difficulty</Label>
-          <Select value={form.difficulty} onValueChange={v => setForm(p => ({...p, difficulty: v}))}>
+          <Select value={form.difficulty} onValueChange={v => setForm(p => ({...p, difficulty: v}))} portal={false}>
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               {['easy','medium','hard','expert'].map(d => <SelectItem key={d} value={d} className="capitalize">{d}</SelectItem>)}
@@ -71,9 +71,15 @@ export default function TopicsPage() {
   const { data: subjectData } = useQuery({ queryKey: ['subject', subjectId], queryFn: () => subjectAPI.getOne(subjectId), select: d => d.data.data })
   const { data: topics, isLoading } = useQuery({ queryKey: ['topics', subjectId], queryFn: () => topicAPI.getAll({ subjectId }), select: d => d.data.data.topics })
 
-  const createMutation = useMutation({ mutationFn: topicAPI.create, onSuccess: () => { qc.invalidateQueries(['topics', subjectId]); qc.invalidateQueries(['subjects']) } })
-  const updateMutation = useMutation({ mutationFn: ({ id, ...d }) => topicAPI.update(id, d), onSuccess: () => { qc.invalidateQueries(['topics', subjectId]); qc.invalidateQueries(['subjects']) } })
-  const deleteMutation = useMutation({ mutationFn: topicAPI.delete, onSuccess: () => { qc.invalidateQueries(['topics', subjectId]); qc.invalidateQueries(['subjects']) } })
+  const refreshTopics = () => {
+    qc.invalidateQueries({ queryKey: ['topics', subjectId] })
+    qc.invalidateQueries({ queryKey: ['topics-all'] })
+    qc.invalidateQueries({ queryKey: ['subject', subjectId] })
+    qc.invalidateQueries({ queryKey: ['subjects'] })
+  }
+  const createMutation = useMutation({ mutationFn: topicAPI.create, onSuccess: refreshTopics })
+  const updateMutation = useMutation({ mutationFn: ({ id, ...d }) => topicAPI.update(id, d), onSuccess: refreshTopics })
+  const deleteMutation = useMutation({ mutationFn: topicAPI.delete, onSuccess: refreshTopics })
 
   const subject = subjectData?.subject
   const completed = topics?.filter(t => t.isCompleted).length || 0

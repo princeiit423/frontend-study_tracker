@@ -36,14 +36,14 @@ function GoalForm({ onClose, onSave }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label>Type</Label>
-          <Select value={form.type} onValueChange={v => setForm(p => ({...p, type: v}))}>
+          <Select value={form.type} onValueChange={v => setForm(p => ({...p, type: v}))} portal={false}>
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>{TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div>
           <Label>Category</Label>
-          <Select value={form.category} onValueChange={v => setForm(p => ({...p, category: v}))}>
+          <Select value={form.category} onValueChange={v => setForm(p => ({...p, category: v}))} portal={false}>
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}</SelectContent>
           </Select>
@@ -67,7 +67,7 @@ function GoalForm({ onClose, onSave }) {
       </div>
       <div>
         <Label>Subject (optional)</Label>
-        <Select value={form.subject} onValueChange={v => setForm(p => ({...p, subject: v}))}>
+        <Select value={form.subject} onValueChange={v => setForm(p => ({...p, subject: v}))} portal={false}>
           <SelectTrigger className="mt-1"><SelectValue placeholder="All subjects" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="">All subjects</SelectItem>

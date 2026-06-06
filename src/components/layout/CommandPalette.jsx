@@ -26,10 +26,12 @@ export default function CommandPalette() {
   const captureMutation = useMutation({
     mutationFn: coachAPI.quickCapture,
     onSuccess: () => {
-      qc.invalidateQueries(['coach-queue'])
-      qc.invalidateQueries(['tasks'])
-      qc.invalidateQueries(['notes'])
-      qc.invalidateQueries(['mistakes'])
+      qc.invalidateQueries({ queryKey: ['coach-queue'] })
+      qc.invalidateQueries({ queryKey: ['coach-weakness'] })
+      qc.invalidateQueries({ queryKey: ['coach-weekly-report'] })
+      qc.invalidateQueries({ queryKey: ['tasks'] })
+      qc.invalidateQueries({ queryKey: ['notes'] })
+      qc.invalidateQueries({ queryKey: ['mistakes'] })
     },
   })
 
