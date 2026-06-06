@@ -10,6 +10,58 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+let activeApiRequests = 0
+let lastUserLoaderActionAt = 0
+const USER_ACTION_LOADER_WINDOW_MS = 1400
+
+const markUserLoaderAction = () => {
+  lastUserLoaderActionAt = Date.now()
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', (event) => {
+    const target = event.target
+    if (target?.closest?.('button, a, [role="button"], [data-api-loader-trigger]')) {
+      markUserLoaderAction()
+    }
+  }, true)
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    const target = event.target
+    if (target?.closest?.('button, a, [role="button"], form, [data-api-loader-trigger]')) {
+      markUserLoaderAction()
+    }
+  }, true)
+
+  window.addEventListener('submit', markUserLoaderAction, true)
+}
+
+const emitApiLoading = () => {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('acestudy:api-loading', {
+    detail: { pending: activeApiRequests },
+  }))
+}
+
+const shouldUseGlobalLoader = (config) => {
+  if (config?.skipGlobalLoader) return
+  return Date.now() - lastUserLoaderActionAt <= USER_ACTION_LOADER_WINDOW_MS
+}
+
+const startApiLoading = (config) => {
+  if (!shouldUseGlobalLoader(config)) return
+  activeApiRequests += 1
+  config.__usesGlobalLoader = true
+  emitApiLoading()
+}
+
+const stopApiLoading = (config) => {
+  if (!config?.__usesGlobalLoader) return
+  activeApiRequests = Math.max(0, activeApiRequests - 1)
+  emitApiLoading()
+}
+
 const guestResponse = (config, data, message = 'Guest preview data') => Promise.resolve({
   data: { success: true, data, message },
   status: 200,
@@ -125,6 +177,7 @@ const getGuestData = (config) => {
 }
 
 api.interceptors.request.use((config) => {
+  startApiLoading(config)
   const state = store.getState()
   if (state.auth.isGuest) {
     config.adapter = () => guestResponse(config, getGuestData(config))
@@ -134,7 +187,10 @@ api.interceptors.request.use((config) => {
   const token = state.auth.accessToken
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
-}, (error) => Promise.reject(error))
+}, (error) => {
+  stopApiLoading(error.config)
+  return Promise.reject(error)
+})
 
 let isRefreshing = false
 let failedQueue = []
@@ -148,9 +204,13 @@ const processQueue = (error, token = null) => {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    stopApiLoading(response.config)
+    return response
+  },
   async (error) => {
     const originalRequest = error.config
+    stopApiLoading(originalRequest)
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       if (

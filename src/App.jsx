@@ -30,6 +30,7 @@ import StudyCoachPage from './pages/StudyCoachPage'
 
 import AppLayout from './components/layout/AppLayout'
 import SplashScreen from './components/auth/SplashScreen'
+import GlobalApiLoader from './components/ui/GlobalApiLoader'
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useSelector(selectIsAuthenticated)
@@ -112,10 +113,11 @@ export default function App() {
     return () => media.removeEventListener?.('change', handleChange)
   }, [user?.theme])
 
-  if (isLoading) return <SplashScreen />
+  if (isLoading) return <><SplashScreen /><GlobalApiLoader /></>
 
   return (
     <BrowserRouter>
+      <GlobalApiLoader />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/privacy-policy" element={<LegalPage type="privacy" />} />
